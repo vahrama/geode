@@ -292,7 +292,7 @@ public abstract class AbstractGatewaySender implements GatewaySender, Distributi
     this.getSenderAdvisor().setIsPrimary(isPrimary);
   }
 
-  public Cache getCache() {
+  public InternalCache getCache() {
     return this.cache;
   }
 

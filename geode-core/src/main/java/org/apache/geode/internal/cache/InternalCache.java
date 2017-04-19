@@ -34,6 +34,8 @@ import org.apache.geode.cache.TimeoutException;
 import org.apache.geode.cache.client.internal.ClientMetadataService;
 import org.apache.geode.cache.query.QueryService;
 import org.apache.geode.cache.query.internal.cq.CqService;
+import org.apache.geode.cache.server.CacheServer;
+import org.apache.geode.cache.wan.GatewayReceiver;
 import org.apache.geode.cache.wan.GatewaySender;
 import org.apache.geode.distributed.DistributedLockService;
 import org.apache.geode.distributed.DistributedMember;
@@ -180,4 +182,12 @@ public interface InternalCache extends Cache, Extensible<Cache> {
   Set<RegionListener> getRegionListeners();
 
   CacheConfig getCacheConfig();
+
+  void addGatewaySender(GatewaySender sender);
+
+  boolean isGemFireCacheImpl(); // TODO: eliminate this and remove deps on CacheCreation
+
+  void addGatewayReceiver(GatewayReceiver recv);
+
+  CacheServer addCacheServer(boolean isGatewayReceiver);
 }

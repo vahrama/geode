@@ -23,16 +23,15 @@ import java.util.List;
 
 import org.apache.logging.log4j.Logger;
 
-import org.apache.geode.cache.Cache;
 import org.apache.geode.cache.server.CacheServer;
 import org.apache.geode.cache.wan.GatewayReceiver;
 import org.apache.geode.cache.wan.GatewayTransportFilter;
 import org.apache.geode.distributed.internal.InternalDistributedSystem;
 import org.apache.geode.distributed.internal.ResourceEvent;
 import org.apache.geode.internal.AvailablePort;
+import org.apache.geode.internal.cache.InternalCache;
 import org.apache.geode.internal.net.SocketCreator;
 import org.apache.geode.internal.cache.CacheServerImpl;
-import org.apache.geode.internal.cache.GemFireCacheImpl;
 import org.apache.geode.internal.i18n.LocalizedStrings;
 import org.apache.geode.internal.logging.LogService;
 import org.apache.geode.internal.logging.log4j.LocalizedMessage;
@@ -65,12 +64,12 @@ public class GatewayReceiverImpl implements GatewayReceiver {
 
   private CacheServer receiver;
 
-  private final GemFireCacheImpl cache;
+  private final InternalCache cache;
 
-  public GatewayReceiverImpl(Cache cache, int startPort, int endPort, int timeBetPings,
-      int buffSize, String bindAdd, List<GatewayTransportFilter> filters, String hostnameForSenders,
-      boolean manualStart) {
-    this.cache = (GemFireCacheImpl) cache;
+  GatewayReceiverImpl(InternalCache cache, int startPort, int endPort, int timeBetPings,
+                      int buffSize, String bindAdd, List<GatewayTransportFilter> filters, String hostnameForSenders,
+                      boolean manualStart) {
+    this.cache = cache;
 
     /*
      * If user has set hostNameForSenders then it should take precedence over bindAddress. If user

@@ -14,7 +14,6 @@
  */
 package org.apache.geode.internal.cache.wan;
 
-
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
@@ -22,6 +21,7 @@ import java.util.Set;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.geode.GemFireIOException;
+import org.apache.geode.internal.cache.InternalCache;
 import org.apache.geode.internal.cache.tier.sockets.MessageTooLargeException;
 import org.apache.logging.log4j.Logger;
 
@@ -34,7 +34,6 @@ import org.apache.geode.cache.client.internal.Connection;
 import org.apache.geode.cache.client.internal.pooling.ConnectionDestroyedException;
 import org.apache.geode.cache.wan.GatewaySender;
 import org.apache.geode.distributed.internal.ServerLocation;
-import org.apache.geode.internal.cache.GemFireCacheImpl;
 import org.apache.geode.internal.cache.UpdateAttributesProcessor;
 import org.apache.geode.internal.i18n.LocalizedStrings;
 import org.apache.geode.internal.logging.LogService;
@@ -45,7 +44,6 @@ import org.apache.geode.cache.client.internal.SenderProxy;
 
 /**
  * @since GemFire 7.0
- *
  */
 public class GatewaySenderEventRemoteDispatcher implements GatewaySenderEventDispatcher {
 
@@ -55,7 +53,7 @@ public class GatewaySenderEventRemoteDispatcher implements GatewaySenderEventDis
 
   private volatile Connection connection;
 
-  private final Set<String> notFoundRegions = new HashSet<String>();
+  private final Set<String> notFoundRegions = new HashSet<>();
 
   private final Object notFoundRegionsSync = new Object();
 
@@ -73,7 +71,6 @@ public class GatewaySenderEventRemoteDispatcher implements GatewaySenderEventDis
   public GatewaySenderEventRemoteDispatcher(AbstractGatewaySenderEventProcessor eventProcessor) {
     this.processor = eventProcessor;
     this.sender = eventProcessor.getSender();
-    // this.ackReaderThread = new AckReaderThread(sender);
     try {
       initializeConnection();
     } catch (GatewaySenderException e) {
@@ -83,7 +80,7 @@ public class GatewaySenderEventRemoteDispatcher implements GatewaySenderEventDis
     }
   }
 
-  protected GatewayAck readAcknowledgement() {
+  private GatewayAck readAcknowledgement() {
     SenderProxy sp = new SenderProxy(this.processor.getSender().getProxy());
     GatewayAck ack = null;
     Exception ex;
@@ -197,7 +194,7 @@ public class GatewaySenderEventRemoteDispatcher implements GatewaySenderEventDis
   }
 
   private boolean _dispatchBatch(List events, boolean isRetry) {
-    Exception ex = null;
+    Exception ex;
     int currentBatchId = this.processor.getBatchId();
     connection = getConnection(true);
     int batchIdForThisConnection = this.processor.getBatchId();
@@ -296,8 +293,6 @@ public class GatewaySenderEventRemoteDispatcher implements GatewaySenderEventDis
    * Acquires or adds a new <code>Connection</code> to the corresponding <code>Gateway</code>
    *
    * @return the <code>Connection</code>
-   *
-   * @throws GatewaySenderException
    */
   public Connection getConnection(boolean startAckReaderThread) throws GatewaySenderException {
     if (this.processor.isStopped()) {
@@ -361,8 +356,6 @@ public class GatewaySenderEventRemoteDispatcher implements GatewaySenderEventDis
 
   /**
    * Initializes the <code>Connection</code>.
-   *
-   * @throws GatewaySenderException
    */
   private void initializeConnection() throws GatewaySenderException, GemFireSecurityException {
     this.connectionLifeCycleLock.writeLock().lock();
@@ -468,7 +461,7 @@ public class GatewaySenderEventRemoteDispatcher implements GatewaySenderEventDis
       }
       if (this.failedConnectCount > 0) {
         Object[] logArgs = new Object[] {this.processor.getSender().getId(), con,
-            Integer.valueOf(this.failedConnectCount)};
+            this.failedConnectCount};
         logger.info(LocalizedMessage.create(
             LocalizedStrings.GatewayEventRemoteDispatcher_0_USING_1_AFTER_2_FAILED_CONNECT_ATTEMPTS,
             logArgs));
@@ -490,7 +483,7 @@ public class GatewaySenderEventRemoteDispatcher implements GatewaySenderEventDis
     }
   }
 
-  protected boolean logConnectionFailure() {
+  private boolean logConnectionFailure() {
     // always log the first failure
     if (logger.isDebugEnabled() || this.failedConnectCount == 0) {
       return true;
@@ -533,39 +526,39 @@ public class GatewaySenderEventRemoteDispatcher implements GatewaySenderEventDis
     /**
      * @return the batchId
      */
-    public int getBatchId() {
+    int getBatchId() {
       return batchId;
     }
 
-    public BatchException70 getBatchException() {
+    BatchException70 getBatchException() {
       return this.be;
     }
   }
 
   class AckReaderThread extends Thread {
 
-    private Object runningStateLock = new Object();
+    private final Object runningStateLock = new Object();
 
     /**
      * boolean to make a shutdown request
      */
     private volatile boolean shutdown = false;
 
-    private final GemFireCacheImpl cache;
+    private final InternalCache cache;
 
     private volatile boolean ackReaderThreadRunning = false;
 
-    public AckReaderThread(GatewaySender sender, AbstractGatewaySenderEventProcessor processor) {
+    AckReaderThread(GatewaySender sender, AbstractGatewaySenderEventProcessor processor) {
       this(sender, processor.getName());
     }
 
-    public AckReaderThread(GatewaySender sender, String name) {
+    AckReaderThread(GatewaySender sender, String name) {
       super("AckReaderThread for : " + name);
       this.setDaemon(true);
-      this.cache = (GemFireCacheImpl) ((AbstractGatewaySender) sender).getCache();
+      this.cache = ((AbstractGatewaySender) sender).getCache();
     }
 
-    public void waitForRunningAckReaderThreadRunningState() {
+    void waitForRunningAckReaderThreadRunningState() {
       synchronized (runningStateLock) {
         while (!this.ackReaderThreadRunning) {
           try {
@@ -671,14 +664,9 @@ public class GatewaySenderEventRemoteDispatcher implements GatewaySenderEventDis
         }
         ackReaderThreadRunning = false;
       }
-
     }
 
-    /**
-     * @param exception
-     * 
-     */
-    protected void logBatchExceptions(BatchException70 exception) {
+    void logBatchExceptions(BatchException70 exception) {
       try {
         for (BatchException70 be : exception.getExceptions()) {
           boolean logWarning = true;
@@ -785,7 +773,6 @@ public class GatewaySenderEventRemoteDispatcher implements GatewaySenderEventDis
       } catch (ConnectionDestroyedException e) {
         logger.info("AckReader shutting down and connection already destroyed");
       }
-
     }
   }
 
@@ -805,6 +792,7 @@ public class GatewaySenderEventRemoteDispatcher implements GatewaySenderEventDis
     return connection != null && !connection.isDestroyed();
   }
 
+  @Override
   public void stop() {
     stopAckReaderThread();
     if (this.processor.isStopped()) {
@@ -812,4 +800,3 @@ public class GatewaySenderEventRemoteDispatcher implements GatewaySenderEventDis
     }
   }
 }
-

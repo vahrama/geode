@@ -1031,14 +1031,19 @@ public class CacheCreation implements InternalCache {
     return this.bridgeServers;
   }
 
-  public GatewaySender addGatewaySender(GatewaySender sender) {
+  public void addGatewaySender(GatewaySender sender) {
     this.gatewaySenders.add(sender);
-    return sender;
+    //return sender; TODO:KIRK: delete this line
   }
 
-  public GatewayReceiver addGatewayReceiver(GatewayReceiver receiver) {
+  @Override
+  public boolean isGemFireCacheImpl() {
+    return false;
+  }
+
+  public void addGatewayReceiver(GatewayReceiver receiver) {
     this.gatewayReceivers.add(receiver);
-    return receiver;
+//    return receiver; TODO:KIRK: delete this line
   }
 
   public AsyncEventQueue addAsyncEventQueue(AsyncEventQueue asyncEventQueue) {

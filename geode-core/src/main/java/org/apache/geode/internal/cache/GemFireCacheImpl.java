@@ -4087,6 +4087,11 @@ public class GemFireCacheImpl
     }
   }
 
+  @Override
+  public boolean isGemFireCacheImpl() {
+    return true;
+  }
+
   public void removeGatewaySender(GatewaySender sender) {
     if (isClient()) {
       throw new UnsupportedOperationException("operation is not supported on a client cache");

@@ -18,7 +18,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.logging.log4j.Logger;
 
-import org.apache.geode.cache.Cache;
 import org.apache.geode.cache.asyncqueue.AsyncEventListener;
 import org.apache.geode.cache.client.internal.LocatorDiscoveryCallback;
 import org.apache.geode.cache.wan.GatewayEventFilter;
@@ -28,11 +27,9 @@ import org.apache.geode.cache.wan.GatewaySender.OrderPolicy;
 import org.apache.geode.cache.wan.GatewaySenderFactory;
 import org.apache.geode.cache.wan.GatewayTransportFilter;
 import org.apache.geode.distributed.internal.InternalDistributedSystem;
-import org.apache.geode.internal.cache.GemFireCacheImpl;
 import org.apache.geode.internal.cache.InternalCache;
 import org.apache.geode.internal.cache.wan.parallel.ParallelGatewaySenderImpl;
 import org.apache.geode.internal.cache.wan.serial.SerialGatewaySenderImpl;
-import org.apache.geode.internal.cache.xmlcache.CacheCreation;
 import org.apache.geode.internal.cache.xmlcache.ParallelGatewaySenderCreation;
 import org.apache.geode.internal.cache.xmlcache.SerialGatewaySenderCreation;
 import org.apache.geode.internal.i18n.LocalizedStrings;
@@ -197,7 +194,7 @@ public class GatewaySenderFactoryImpl implements InternalGatewaySenderFactory {
     }
 
     // Verify socket read timeout if a proper logger is available
-    if (this.cache instanceof GemFireCacheImpl) {
+    if (this.cache.isGemFireCacheImpl()) {
       // If socket read timeout is less than the minimum, log a warning.
       // Ideally, this should throw a GatewaySenderException, but wan dunit tests
       // were failing, and we were running out of time to change them.
@@ -221,27 +218,22 @@ public class GatewaySenderFactoryImpl implements InternalGatewaySenderFactory {
     }
 
     if (this.attrs.isParallel()) {
-      // if(this.attrs.getDispatcherThreads() != 1){
-      // throw new GatewaySenderException(
-      // LocalizedStrings.GatewaySenderImpl_PARALLEL_GATEWAY_SENDER_0_CANNOT_BE_CREATED_WITH_DISPATCHER_THREADS_OTHER_THAN_1
-      // .toLocalizedString(id));
-      // }
       if ((this.attrs.getOrderPolicy() != null)
           && this.attrs.getOrderPolicy().equals(OrderPolicy.THREAD)) {
         throw new GatewaySenderException(
             LocalizedStrings.GatewaySenderImpl_PARALLEL_GATEWAY_SENDER_0_CANNOT_BE_CREATED_WITH_ORDER_POLICY_1
                 .toLocalizedString(id, this.attrs.getOrderPolicy()));
       }
-      if (this.cache instanceof GemFireCacheImpl) {
+      if (this.cache.isGemFireCacheImpl()) {
         sender = new ParallelGatewaySenderImpl(this.cache, this.attrs);
-        ((GemFireCacheImpl) this.cache).addGatewaySender(sender);
+        this.cache.addGatewaySender(sender);
 
         if (!this.attrs.isManualStart()) {
           sender.start();
         }
-      } else if (this.cache instanceof CacheCreation) {
+      } else {
         sender = new ParallelGatewaySenderCreation(this.cache, this.attrs);
-        ((CacheCreation) this.cache).addGatewaySender(sender);
+        this.cache.addGatewaySender(sender);
       }
     } else {
       if (this.attrs.getAsyncEventListeners().size() > 0) {
@@ -252,16 +244,16 @@ public class GatewaySenderFactoryImpl implements InternalGatewaySenderFactory {
       if (this.attrs.getOrderPolicy() == null && this.attrs.getDispatcherThreads() > 1) {
         this.attrs.policy = GatewaySender.DEFAULT_ORDER_POLICY;
       }
-      if (this.cache instanceof GemFireCacheImpl) {
+      if (this.cache.isGemFireCacheImpl()) {
         sender = new SerialGatewaySenderImpl(this.cache, this.attrs);
-        ((GemFireCacheImpl) this.cache).addGatewaySender(sender);
+        this.cache.addGatewaySender(sender);
 
         if (!this.attrs.isManualStart()) {
           sender.start();
         }
-      } else if (this.cache instanceof CacheCreation) {
+      } else {
         sender = new SerialGatewaySenderCreation(this.cache, this.attrs);
-        ((CacheCreation) this.cache).addGatewaySender(sender);
+        this.cache.addGatewaySender(sender);
       }
     }
     return sender;
@@ -285,29 +277,29 @@ public class GatewaySenderFactoryImpl implements InternalGatewaySenderFactory {
                 .toLocalizedString(id, this.attrs.getOrderPolicy()));
       }
 
-      if (this.cache instanceof GemFireCacheImpl) {
+      if (this.cache.isGemFireCacheImpl()) {
         sender = new ParallelGatewaySenderImpl(this.cache, this.attrs);
-        ((GemFireCacheImpl) this.cache).addGatewaySender(sender);
+        this.cache.addGatewaySender(sender);
         if (!this.attrs.isManualStart()) {
           sender.start();
         }
-      } else if (this.cache instanceof CacheCreation) {
+      } else {
         sender = new ParallelGatewaySenderCreation(this.cache, this.attrs);
-        ((CacheCreation) this.cache).addGatewaySender(sender);
+        this.cache.addGatewaySender(sender);
       }
     } else {
       if (this.attrs.getOrderPolicy() == null && this.attrs.getDispatcherThreads() > 1) {
         this.attrs.policy = GatewaySender.DEFAULT_ORDER_POLICY;
       }
-      if (this.cache instanceof GemFireCacheImpl) {
+      if (this.cache.isGemFireCacheImpl()) {
         sender = new SerialGatewaySenderImpl(this.cache, this.attrs);
-        ((GemFireCacheImpl) this.cache).addGatewaySender(sender);
+        this.cache.addGatewaySender(sender);
         if (!this.attrs.isManualStart()) {
           sender.start();
         }
-      } else if (this.cache instanceof CacheCreation) {
+      } else {
         sender = new SerialGatewaySenderCreation(this.cache, this.attrs);
-        ((CacheCreation) this.cache).addGatewaySender(sender);
+        this.cache.addGatewaySender(sender);
       }
     }
     return sender;

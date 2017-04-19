@@ -18,19 +18,16 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.geode.cache.Cache;
 import org.apache.geode.cache.wan.GatewayReceiver;
 import org.apache.geode.cache.wan.GatewayReceiverFactory;
 import org.apache.geode.cache.wan.GatewayTransportFilter;
 import org.apache.geode.distributed.internal.InternalDistributedSystem;
 import org.apache.geode.distributed.internal.ResourceEvent;
-import org.apache.geode.internal.cache.GemFireCacheImpl;
-import org.apache.geode.internal.cache.xmlcache.CacheCreation;
+import org.apache.geode.internal.cache.InternalCache;
 import org.apache.geode.internal.cache.xmlcache.GatewayReceiverCreation;
 import org.apache.geode.internal.i18n.LocalizedStrings;
 
 /**
- * 
  * @since GemFire 7.0
  */
 public class GatewayReceiverFactoryImpl implements GatewayReceiverFactory {
@@ -51,13 +48,9 @@ public class GatewayReceiverFactoryImpl implements GatewayReceiverFactory {
 
   private List<GatewayTransportFilter> filters = new ArrayList<GatewayTransportFilter>();
 
-  private Cache cache;
+  private InternalCache cache;
 
-  public GatewayReceiverFactoryImpl() {
-
-  }
-
-  public GatewayReceiverFactoryImpl(Cache cache) {
+  public GatewayReceiverFactoryImpl(InternalCache cache) {
     this.cache = cache;
   }
 
@@ -112,11 +105,11 @@ public class GatewayReceiverFactoryImpl implements GatewayReceiverFactory {
           "Please specify either start port a value which is less than end port.");
     }
     GatewayReceiver recv = null;
-    if (this.cache instanceof GemFireCacheImpl) {
+    if (this.cache.isGemFireCacheImpl()) {
       recv = new GatewayReceiverImpl(this.cache, this.startPort, this.endPort, this.timeBetPings,
           this.socketBuffSize, this.bindAdd, this.filters, this.hostnameForSenders,
           this.manualStart);
-      ((GemFireCacheImpl) cache).addGatewayReceiver(recv);
+      this.cache.addGatewayReceiver(recv);
       InternalDistributedSystem system =
           (InternalDistributedSystem) this.cache.getDistributedSystem();
       system.handleResourceEvent(ResourceEvent.GATEWAYRECEIVER_CREATE, recv);
@@ -130,11 +123,11 @@ public class GatewayReceiverFactoryImpl implements GatewayReceiverFactory {
               ioe);
         }
       }
-    } else if (this.cache instanceof CacheCreation) {
+    } else {
       recv = new GatewayReceiverCreation(this.cache, this.startPort, this.endPort,
           this.timeBetPings, this.socketBuffSize, this.bindAdd, this.filters,
           this.hostnameForSenders, this.manualStart);
-      ((CacheCreation) cache).addGatewayReceiver(recv);
+      this.cache.addGatewayReceiver(recv);
     }
     return recv;
   }
