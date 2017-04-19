@@ -25,12 +25,13 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
-import org.apache.geode.annotations.Experimental;
 import org.apache.logging.log4j.Logger;
 import org.springframework.scheduling.support.CronSequenceGenerator;
 
 import org.apache.geode.GemFireConfigException;
+import org.apache.geode.annotations.Experimental;
 import org.apache.geode.cache.CacheClosedException;
 import org.apache.geode.cache.Declarable;
 import org.apache.geode.cache.GemFireCache;
@@ -344,14 +345,14 @@ public class AutoBalancer implements Declarable {
   static class GeodeCacheFacade implements CacheOperationFacade {
     private final AtomicBoolean isLockAcquired = new AtomicBoolean(false);
 
-    private InternalCache cache;
+    private final AtomicReference<InternalCache> cacheRef = new AtomicReference();
 
     public GeodeCacheFacade() {
       this(null);
     }
 
     public GeodeCacheFacade(InternalCache cache) {
-      this.cache = cache;
+      this.cacheRef.set(cache);
     }
 
     @Override
@@ -443,15 +444,15 @@ public class AutoBalancer implements Declarable {
     }
 
     InternalCache getCache() {
-      if (cache == null) {
+      if (cacheRef.get() == null) {
         synchronized (this) {
-          if (cache == null) {
-            cache = GemFireCacheImpl.getInstance();
-            if (cache == null) {
-              throw new IllegalStateException("Missing cache instance.");
-            }
-          }
+          cacheRef.set(GemFireCacheImpl.getInstance());
         }
+      }
+
+      InternalCache cache = cacheRef.get();
+      if (cache == null) {
+        throw new IllegalStateException("Missing cache instance.");
       }
       if (cache.isClosed()) {
         throw new CacheClosedException();
