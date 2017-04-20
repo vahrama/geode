@@ -76,7 +76,7 @@ public interface InternalCache extends Cache, Extensible<Cache> {
 
   FilterProfile getFilterProfile(String regionName);
 
-  Region getRegion(String path, boolean returnDestroyedRegion);
+  <K, V> Region<K, V> getRegion(String path, boolean returnDestroyedRegion);
 
   MemoryAllocator getOffHeapStore();
 

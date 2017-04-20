@@ -221,19 +221,13 @@ public class ProxyCache implements RegionService {
     return this.stopper;
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see org.apache.geode.cache.RegionService#rootRegions()
-   */
+  @Override
   public Set<Region<?, ?>> rootRegions() {
     preOp();
-    Set<Region<?, ?>> rRegions = new HashSet<Region<?, ?>>();
-    Iterator<LocalRegion> it = this.cache.rootRegions().iterator();
-    while (it.hasNext()) {
-      LocalRegion lr = it.next();
-      if (!lr.getAttributes().getDataPolicy().withStorage()) {
-        rRegions.add(new ProxyRegion(this, lr));
+    Set<Region<?, ?>> rRegions = new HashSet<>();
+    for (Region region : this.cache.rootRegions()) {
+      if (!region.getAttributes().getDataPolicy().withStorage()) {
+        rRegions.add(new ProxyRegion(this, region));
       }
     }
     return Collections.unmodifiableSet(rRegions);

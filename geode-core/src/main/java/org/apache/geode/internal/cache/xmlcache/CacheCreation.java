@@ -1727,7 +1727,7 @@ public class CacheCreation implements InternalCache {
   }
 
   @Override
-  public Region getRegion(final String path, final boolean returnDestroyedRegion) {
+  public <K, V> Region<K, V> getRegion(final String path, final boolean returnDestroyedRegion) {
     throw new UnsupportedOperationException(LocalizedStrings.SHOULDNT_INVOKE.toLocalizedString());
   }
 

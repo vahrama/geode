@@ -1278,16 +1278,15 @@ public class MemberMBeanBridge {
   }
 
   /**
-   * 
    * @return root region names
    */
   public String[] getRootRegionNames() {
-    Set<LocalRegion> listOfRootRegions = cache.rootRegions();
+    Set<Region<?, ?>> listOfRootRegions = cache.rootRegions();
     if (listOfRootRegions != null && listOfRootRegions.size() > 0) {
       String[] regionStr = new String[listOfRootRegions.size()];
       int j = 0;
-      for (LocalRegion rg : listOfRootRegions) {
-        regionStr[j] = rg.getFullPath();
+      for (Region region : listOfRootRegions) {
+        regionStr[j] = region.getFullPath();
         j++;
       }
       return regionStr;

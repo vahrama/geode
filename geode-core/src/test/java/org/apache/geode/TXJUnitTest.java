@@ -3902,7 +3902,7 @@ public class TXJUnitTest {
   public void testCollections() throws CacheException {
     Region reg1 = this.region;
 
-    checkSubRegionCollecection(reg1);
+    checkSubRegionCollection(reg1);
 
     {
       Collection nonTxKeys = reg1.keySet();
@@ -4106,7 +4106,7 @@ public class TXJUnitTest {
   /**
    * @param reg1
    */
-  protected void checkSubRegionCollecection(Region reg1) {
+  protected void checkSubRegionCollection(Region reg1) {
     AttributesFactory af = new AttributesFactory();
     af.setScope(Scope.DISTRIBUTED_NO_ACK);
     Region sub1 = this.region.createSubregion("collectionSub1", af.create());
