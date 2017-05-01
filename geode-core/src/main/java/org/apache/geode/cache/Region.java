@@ -1071,6 +1071,7 @@ public interface Region<K, V> extends ConcurrentMap<K, V> {
    * @return the Cache
    * @deprecated as of 6.5 use {@link #getRegionService()} instead.
    */
+  @Deprecated
   public Cache getCache();
 
   /**
