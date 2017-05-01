@@ -15,6 +15,9 @@
 
 package org.apache.geode.internal.cache;
 
+import static org.apache.geode.internal.lang.SystemUtils.getLineSeparator;
+
+import org.apache.geode.cache.DiskStore;
 import org.apache.geode.cache.EntryDestroyedException;
 import org.apache.geode.cache.Region;
 import org.apache.geode.cache.RegionDestroyedException;
@@ -58,7 +61,6 @@ public class ColocationHelper {
   /**
    * An utility method to retrieve colocated region of a given partitioned region
    *
-   * @param partitionedRegion
    * @return colocated PartitionedRegion
    * @throws IllegalStateException for missing colocated region
    * @since GemFire 5.8Beta
@@ -124,7 +126,7 @@ public class ColocationHelper {
         String prName = (String) itr.next();
         try {
           prConf = (PartitionRegionConfig) prRoot.get(prName);
-        } catch (EntryDestroyedException ede) {
+        } catch (EntryDestroyedException ignore) {
           continue;
         }
         if (prConf == null) {
@@ -134,7 +136,8 @@ public class ColocationHelper {
         }
         if (prConf.getColocatedWith() != null) {
           if (prConf.getColocatedWith().equals(tempToBeColocatedWith.getFullPath())
-              || ("/" + prConf.getColocatedWith()).equals(tempToBeColocatedWith.getFullPath())) {
+              || (getLineSeparator() + prConf.getColocatedWith())
+                  .equals(tempToBeColocatedWith.getFullPath())) {
             colocatedRegions.add(prConf);
             tempcolocatedRegions.add(prConf);
           }
@@ -149,11 +152,7 @@ public class ColocationHelper {
       if (colocatedWithRegionName == null)
         break;
       else {
-        try {
-          prConf = (PartitionRegionConfig) prRoot.get(getRegionIdentifier(colocatedWithRegionName));
-        } catch (EntryDestroyedException ede) {
-          throw ede;
-        }
+        prConf = (PartitionRegionConfig) prRoot.get(getRegionIdentifier(colocatedWithRegionName));
         if (prConf == null) {
           break;
         }
@@ -193,12 +192,13 @@ public class ColocationHelper {
     boolean hasOfflineChildren = false;
     int oldLevel = LocalRegion.setThreadInitLevelRequirement(LocalRegion.ANY_INIT);
     try {
-      GemFireCacheImpl cache = region.getCache();
-      Collection<DiskStoreImpl> stores = cache.listDiskStores();
+      InternalCache cache = region.getCache();
+      Collection<DiskStore> stores = cache.listDiskStores();
       // Look through all of the disk stores for offline colocated child regions
-      for (DiskStoreImpl diskStore : stores) {
+      for (DiskStore diskStore : stores) {
         // Look at all of the partitioned regions.
-        for (Map.Entry<String, PRPersistentConfig> entry : diskStore.getAllPRs().entrySet()) {
+        for (Map.Entry<String, PRPersistentConfig> entry : ((DiskStoreImpl) diskStore).getAllPRs()
+            .entrySet()) {
 
           PRPersistentConfig config = entry.getValue();
           String childName = entry.getKey();
@@ -275,7 +275,6 @@ public class ColocationHelper {
    * getAllColocationRegions(orderPR) --> List{customerPR, shipmentPR}<br>
    * getAllColocationRegions(shipmentPR) --> List{customerPR, orderPR}<br>
    * 
-   * @param partitionedRegion
    * @return List of all partitioned regions (excluding self) in a colocated chain
    * @since GemFire 5.8Beta
    */
@@ -309,7 +308,6 @@ public class ColocationHelper {
   /**
    * gets local data of colocated regions on a particular data store
    * 
-   * @param partitionedRegion
    * @return map of region name to local colocated regions
    * @since GemFire 5.8Beta
    */
@@ -367,7 +365,6 @@ public class ColocationHelper {
    * getColocatedChildRegions(orderPR) will return List{shipmentPR}<br>
    * getColocatedChildRegions(shipmentPR) will return empty List{}<br>
    * 
-   * @param partitionedRegion
    * @return list of all child partitioned regions colocated with the region
    * @since GemFire 5.8Beta
    */
@@ -387,7 +384,7 @@ public class ColocationHelper {
         }
         try {
           prConf = (PartitionRegionConfig) prRoot.get(prName);
-        } catch (EntryDestroyedException ede) {
+        } catch (EntryDestroyedException ignore) {
           continue;
         }
         if (prConf == null) {

@@ -16,6 +16,7 @@ package org.apache.geode.internal.cache.persistence;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.geode.InternalGemFireError;
+import org.apache.geode.cache.DiskStore;
 import org.apache.geode.cache.persistence.PersistentID;
 import org.apache.geode.distributed.DistributedSystem;
 import org.apache.geode.distributed.internal.DM;
@@ -81,9 +82,9 @@ public class BackupManager implements MembershipListener {
   private void cleanup() {
     isCancelled = true;
     allowDestroys.countDown();
-    Collection<DiskStoreImpl> diskStores = cache.listDiskStoresIncludingRegionOwned();
-    for (DiskStoreImpl store : diskStores) {
-      store.releaseBackupLock();
+    Collection<DiskStore> diskStores = cache.listDiskStoresIncludingRegionOwned();
+    for (DiskStore store : diskStores) {
+      ((DiskStoreImpl) store).releaseBackupLock();
     }
     final DM distributionManager = cache.getInternalDistributedSystem().getDistributionManager();
     distributionManager.removeAllMembershipListener(this);
@@ -92,12 +93,13 @@ public class BackupManager implements MembershipListener {
 
   public HashSet<PersistentID> prepareBackup() {
     HashSet<PersistentID> persistentIds = new HashSet<PersistentID>();
-    Collection<DiskStoreImpl> diskStores = cache.listDiskStoresIncludingRegionOwned();
-    for (DiskStoreImpl store : diskStores) {
-      store.lockStoreBeforeBackup();
-      if (store.hasPersistedData()) {
-        persistentIds.add(store.getPersistentID());
-        store.getStats().startBackup();
+    Collection<DiskStore> diskStores = cache.listDiskStoresIncludingRegionOwned();
+    for (DiskStore store : diskStores) {
+      DiskStoreImpl storeImpl = (DiskStoreImpl) store;
+      storeImpl.lockStoreBeforeBackup();
+      if (storeImpl.hasPersistedData()) {
+        persistentIds.add(storeImpl.getPersistentID());
+        storeImpl.getStats().startBackup();
       }
     }
     return persistentIds;
@@ -116,9 +118,10 @@ public class BackupManager implements MembershipListener {
     /*
      * Find the first matching DiskStoreId directory for this member.
      */
-    for (DiskStoreImpl diskStore : cache.listDiskStoresIncludingRegionOwned()) {
+    for (DiskStore diskStore : cache.listDiskStoresIncludingRegionOwned()) {
       File[] matchingFiles = baselineParentDir.listFiles(new FilenameFilter() {
-        Pattern pattern = Pattern.compile(".*" + diskStore.getBackupDirName() + "$");
+        Pattern pattern =
+            Pattern.compile(".*" + ((DiskStoreImpl) diskStore).getBackupDirName() + "$");
 
         public boolean accept(File dir, String name) {
           Matcher m = pattern.matcher(name);
@@ -142,7 +145,6 @@ public class BackupManager implements MembershipListener {
    *        option. May be null if the user specified a full backup.
    * @return null if the backup is to be a full backup otherwise return the data store directory in
    *         the previous backup for this member (if incremental).
-   * @throws IOException
    */
   private File checkBaseline(File baselineParentDir) throws IOException {
     File baselineDir = null;
@@ -188,12 +190,12 @@ public class BackupManager implements MembershipListener {
       File storesDir = new File(backupDir, DATA_STORES);
       RestoreScript restoreScript = new RestoreScript();
       HashSet<PersistentID> persistentIds = new HashSet<PersistentID>();
-      Collection<DiskStoreImpl> diskStores =
-          new ArrayList<DiskStoreImpl>(cache.listDiskStoresIncludingRegionOwned());
+      Collection<DiskStore> diskStores =
+          new ArrayList<DiskStore>(cache.listDiskStoresIncludingRegionOwned());
 
       boolean foundPersistentData = false;
-      for (Iterator<DiskStoreImpl> itr = diskStores.iterator(); itr.hasNext();) {
-        DiskStoreImpl store = itr.next();
+      for (Iterator<DiskStore> itr = diskStores.iterator(); itr.hasNext();) {
+        DiskStoreImpl store = (DiskStoreImpl) itr.next();
         if (store.hasPersistedData()) {
           if (!foundPersistentData) {
             createBackupDir(backupDir);
@@ -210,10 +212,11 @@ public class BackupManager implements MembershipListener {
 
       allowDestroys.countDown();
 
-      for (DiskStoreImpl store : diskStores) {
-        store.finishBackup(this);
-        store.getStats().endBackup();
-        persistentIds.add(store.getPersistentID());
+      for (DiskStore store : diskStores) {
+        DiskStoreImpl storeImpl = (DiskStoreImpl) store;
+        storeImpl.finishBackup(this);
+        storeImpl.getStats().endBackup();
+        persistentIds.add(storeImpl.getPersistentID());
       }
 
       if (foundPersistentData) {
@@ -330,10 +333,7 @@ public class BackupManager implements MembershipListener {
         cache.getInternalDistributedSystem().getDistributedMember();
     String vmId = memberId.toString();
     vmId = cleanSpecialCharacters(vmId);
-    File backupDir = new File(targetDir, vmId);
-
-
-    return backupDir;
+    return new File(targetDir, vmId);
   }
 
   private void createBackupDir(File backupDir) throws IOException {

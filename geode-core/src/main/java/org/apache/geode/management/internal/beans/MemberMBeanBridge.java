@@ -14,6 +14,8 @@
  */
 package org.apache.geode.management.internal.beans;
 
+import static org.apache.geode.internal.lang.SystemUtils.getLineSeparator;
+
 import org.apache.geode.Statistics;
 import org.apache.geode.StatisticsType;
 import org.apache.geode.cache.CacheClosedException;
@@ -319,16 +321,9 @@ public class MemberMBeanBridge {
       logger.info(LogMarker.CONFIG, "Command Service could not be initialized. {}", e.getMessage());
     } catch (DependenciesNotFoundException e) {
       commandServiceInitError = e.getMessage();
-      if (CacheServerLauncher.isDedicatedCacheServer) {
-        // log as error for dedicated cache server - launched through script
-        // LOG:CONFIG:
-        logger.info(LogMarker.CONFIG, "Command Service could not be initialized. {}",
-            e.getMessage());
-      } else {
-        // LOG:CONFIG:
-        logger.info(LogMarker.CONFIG, "Command Service could not be initialized. {}",
-            e.getMessage());
-      }
+      // log as error for dedicated cache server - launched through script
+      // LOG:CONFIG:
+      logger.info(LogMarker.CONFIG, "Command Service could not be initialized. {}", e.getMessage());
     }
 
     intitGemfireProperties();
@@ -336,7 +331,7 @@ public class MemberMBeanBridge {
     try {
       InetAddress addr = SocketCreator.getLocalHost();
       this.hostname = addr.getHostName();
-    } catch (UnknownHostException ex) {
+    } catch (UnknownHostException ignore) {
       this.hostname = ManagementConstants.DEFAULT_HOST_NAME;
     }
 
@@ -787,13 +782,13 @@ public class MemberMBeanBridge {
       try {
         maxFileDescriptorCount =
             (Long) mbeanServer.getAttribute(osObjectName, "MaxFileDescriptorCount");
-      } catch (Exception e) {
+      } catch (Exception ignore) {
         maxFileDescriptorCount = -1;
       }
       try {
         committedVirtualMemorySize =
             (Long) mbeanServer.getAttribute(osObjectName, "CommittedVirtualMemorySize");
-      } catch (Exception e) {
+      } catch (Exception ignore) {
         committedVirtualMemorySize = -1;
       }
 
@@ -804,23 +799,23 @@ public class MemberMBeanBridge {
         try {
           totalPhysicalMemorySize =
               systemStat.get(StatsKey.LINUX_SYSTEM_PHYSICAL_MEMORY).longValue();
-        } catch (Exception e) {
+        } catch (Exception ignore) {
           totalPhysicalMemorySize = -1;
         }
         try {
           freePhysicalMemorySize = systemStat.get(StatsKey.LINUX_SYSTEM_FREE_MEMORY).longValue();
-        } catch (Exception e) {
+        } catch (Exception ignore) {
           freePhysicalMemorySize = -1;
         }
         try {
           totalSwapSpaceSize = systemStat.get(StatsKey.LINUX_SYSTEM_TOTAL_SWAP_SIZE).longValue();
-        } catch (Exception e) {
+        } catch (Exception ignore) {
           totalSwapSpaceSize = -1;
         }
 
         try {
           freeSwapSpaceSize = systemStat.get(StatsKey.LINUX_SYSTEM_FREE_SWAP_SIZE).longValue();
-        } catch (Exception e) {
+        } catch (Exception ignore) {
           freeSwapSpaceSize = -1;
         }
 
@@ -877,9 +872,9 @@ public class MemberMBeanBridge {
     List<String> compactedStores = new ArrayList<String>();
 
     if (cache != null && !cache.isClosed()) {
-      for (DiskStoreImpl store : cacheImpl.listDiskStoresIncludingRegionOwned()) {
+      for (DiskStore store : cacheImpl.listDiskStoresIncludingRegionOwned()) {
         if (store.forceCompaction()) {
-          compactedStores.add(store.getPersistentID().getDirectory());
+          compactedStores.add(((DiskStoreImpl) store).getPersistentID().getDirectory());
 
         }
       }
@@ -897,7 +892,7 @@ public class MemberMBeanBridge {
   public String[] listDiskStores(boolean includeRegionOwned) {
     GemFireCacheImpl cacheImpl = (GemFireCacheImpl) cache;
     String[] retStr = null;
-    Collection<DiskStoreImpl> diskCollection = null;
+    Collection<DiskStore> diskCollection = null;
     if (includeRegionOwned) {
       diskCollection = cacheImpl.listDiskStoresIncludingRegionOwned();
     } else {
@@ -905,7 +900,7 @@ public class MemberMBeanBridge {
     }
     if (diskCollection != null && diskCollection.size() > 0) {
       retStr = new String[diskCollection.size()];
-      Iterator<DiskStoreImpl> it = diskCollection.iterator();
+      Iterator<DiskStore> it = diskCollection.iterator();
       int i = 0;
       while (it.hasNext()) {
         retStr[i] = it.next().getName();
@@ -965,13 +960,14 @@ public class MemberMBeanBridge {
       return LocalizedStrings.SystemMemberImpl_NO_LOG_FILE_CONFIGURED_LOG_MESSAGES_WILL_BE_DIRECTED_TO_STDOUT
           .toLocalizedString();
     } else {
-      StringBuffer result = new StringBuffer();
+      StringBuilder result = new StringBuilder();
       if (mainTail != null) {
         result.append(mainTail);
       }
       if (childTail != null) {
-        result.append(
-            "\n" + LocalizedStrings.SystemMemberImpl_TAIL_OF_CHILD_LOG.toLocalizedString() + "\n");
+        result.append(getLineSeparator())
+            .append(LocalizedStrings.SystemMemberImpl_TAIL_OF_CHILD_LOG.toLocalizedString())
+            .append(getLineSeparator());
         result.append(childTail);
       }
       return result.toString();
@@ -993,7 +989,7 @@ public class MemberMBeanBridge {
           try {
             // Allow the Function call to exit
             Thread.sleep(1000);
-          } catch (InterruptedException e) {
+          } catch (InterruptedException ignore) {
           }
           ConnectionTable.threadWantsSharedResources();
           if (ids.isConnected()) {
@@ -1021,8 +1017,8 @@ public class MemberMBeanBridge {
     GemFireCacheImpl cache = GemFireCacheImpl.getInstance();
 
     if (cache != null) {
-      Collection<DiskStoreImpl> diskStores = cache.listDiskStoresIncludingRegionOwned();
-      for (DiskStoreImpl store : diskStores) {
+      Collection<DiskStore> diskStores = cache.listDiskStoresIncludingRegionOwned();
+      for (DiskStore store : diskStores) {
         store.flush();
       }
     }
@@ -1201,8 +1197,7 @@ public class MemberMBeanBridge {
    */
   public long getTotalBytesInUse() {
     MemoryUsage memHeap = memoryMXBean.getHeapMemoryUsage();
-    long bytesUsed = memHeap.getUsed();
-    return bytesUsed;
+    return memHeap.getUsed();
   }
 
   /**
@@ -1334,9 +1329,8 @@ public class MemberMBeanBridge {
       return false;
     }
     try {
-      boolean isManager = service.isManager();
-      return isManager;
-    } catch (Exception e) {
+      return service.isManager();
+    } catch (Exception ignore) {
       return false;
     }
   }
@@ -1354,21 +1348,17 @@ public class MemberMBeanBridge {
     }
     try {
       return service.isManagerCreated();
-    } catch (Exception e) {
+    } catch (Exception ignore) {
       return false;
     }
   }
 
   /**
-   * 
    * @return true if member has a server
    */
   public boolean isServer() {
     return cache.isServer();
   }
-
-  /** Statistics Related Attributes **/
-  /*********************************************************************************************************/
 
   public int getInitialImageKeysReceived() {
     return getMemberLevelStatistic(StatsKey.GET_INITIAL_IMAGE_KEYS_RECEIVED).intValue();
@@ -1701,7 +1691,7 @@ public class MemberMBeanBridge {
     try {
       maxFileDescriptorCount =
           (Long) mbeanServer.getAttribute(osObjectName, "MaxFileDescriptorCount");
-    } catch (Exception e) {
+    } catch (Exception ignore) {
       maxFileDescriptorCount = -1;
     }
     return maxFileDescriptorCount;
@@ -1729,11 +1719,17 @@ public class MemberMBeanBridge {
     return objects;
   }
 
+  /**
+   * @deprecated Please use {@link #getOffHeapFreeMemory()} instead.
+   */
   @Deprecated
   public long getOffHeapFreeSize() {
     return getOffHeapFreeMemory();
   }
 
+  /**
+   * @deprecated Please use {@link #getOffHeapUsedMemory()} instead.
+   */
   @Deprecated
   public long getOffHeapUsedSize() {
     return getOffHeapUsedMemory();

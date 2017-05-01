@@ -22,9 +22,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 
-import org.apache.geode.cache.Cache;
 import org.apache.geode.cache.query.Query;
-import org.apache.geode.cache.query.SelectResults;
+import org.apache.geode.internal.cache.InternalCache;
 import org.apache.geode.pdx.internal.PdxString;
 
 /**
@@ -37,7 +36,9 @@ import org.apache.geode.pdx.internal.PdxString;
 public class QueryExecutionContext extends ExecutionContext {
 
   private int nextFieldNum = 0;
+
   private Query query;
+
   private IntOpenHashSet successfulBuckets;
 
   private boolean cqQueryContext = false;
@@ -67,31 +68,18 @@ public class QueryExecutionContext extends ExecutionContext {
    * List of query index names that the user has hinted on using
    */
 
-  private ArrayList<String> hints = null;
+  private List<String> hints = null;
 
-  /**
-   * @param bindArguments
-   * @param cache
-   */
-  public QueryExecutionContext(Object[] bindArguments, Cache cache) {
+  public QueryExecutionContext(Object[] bindArguments, InternalCache cache) {
     super(bindArguments, cache);
   }
 
-
-
-  /**
-   * @param bindArguments
-   * @param cache
-   * @param query
-   */
-  public QueryExecutionContext(Object[] bindArguments, Cache cache, Query query) {
+  public QueryExecutionContext(Object[] bindArguments, InternalCache cache, Query query) {
     super(bindArguments, cache);
     this.query = query;
   }
 
-
-  // General purpose caching methods for data that is only valid for one
-  // query execution
+  @Override
   void cachePut(Object key, Object value) {
     if (key.equals(CompiledValue.QUERY_INDEX_HINTS)) {
       setHints((ArrayList) value);
@@ -111,10 +99,12 @@ public class QueryExecutionContext extends ExecutionContext {
     execCache.put(key, value);
   }
 
+  @Override
   public Object cacheGet(Object key) {
     return cacheGet(key, null);
   }
 
+  @Override
   public Object cacheGet(Object key, Object defaultValue) {
     // execCache can be empty in cases where we are doing adds to indexes
     // in that case, we use a default execCache
@@ -132,10 +122,12 @@ public class QueryExecutionContext extends ExecutionContext {
     return defaultValue;
   }
 
+  @Override
   public void pushExecCache(int scopeNum) {
     execCacheStack.push(scopeNum);
   }
 
+  @Override
   public void popExecCache() {
     execCacheStack.pop();
   }
@@ -143,48 +135,47 @@ public class QueryExecutionContext extends ExecutionContext {
   /**
    * Added to reset the state from the last execution. This is added for CQs only.
    */
+  @Override
   public void reset() {
     super.reset();
     this.execCacheStack.clear();
   }
 
+  @Override
   int nextFieldNum() {
     return this.nextFieldNum++;
   }
 
+  @Override
   public void setCqQueryContext(boolean cqQuery) {
     this.cqQueryContext = cqQuery;
   }
 
+  @Override
   public boolean isCqQueryContext() {
     return this.cqQueryContext;
   }
 
-
+  @Override
   public Query getQuery() {
     return query;
   }
 
+  @Override
   public void setBucketList(List list) {
     this.bucketList = list;
     this.successfulBuckets = new IntOpenHashSet();
   }
 
+  @Override
   public List getBucketList() {
     return this.bucketList;
-  }
-
-  public void addToSuccessfulBuckets(int bId) {
-    this.successfulBuckets.add(bId);
-  }
-
-  public int[] getSuccessfulBuckets() {
-    return this.successfulBuckets.toIntArray();
   }
 
   /**
    * creates new PdxString from String and caches it
    */
+  @Override
   public PdxString getSavedPdxString(int index) {
     if (bindArgumentToPdxStringMap == null) {
       bindArgumentToPdxStringMap = new HashMap<Integer, PdxString>();
@@ -196,7 +187,6 @@ public class QueryExecutionContext extends ExecutionContext {
       bindArgumentToPdxStringMap.put(index - 1, pdxString);
     }
     return pdxString;
-
   }
 
   public boolean isIndexUsed() {
@@ -207,7 +197,7 @@ public class QueryExecutionContext extends ExecutionContext {
     this.indexUsed = indexUsed;
   }
 
-  public void setHints(ArrayList<String> hints) {
+  private void setHints(ArrayList<String> hints) {
     this.hints = new ArrayList();
     this.hints.addAll(hints);
   }
@@ -227,11 +217,11 @@ public class QueryExecutionContext extends ExecutionContext {
     return -(hints.size() - hints.indexOf(indexName));
   }
 
-  public boolean hasHints() {
+  boolean hasHints() {
     return hints != null;
   }
 
-  public boolean hasMultiHints() {
+  boolean hasMultiHints() {
     return hints != null && hints.size() > 1;
   }
 }

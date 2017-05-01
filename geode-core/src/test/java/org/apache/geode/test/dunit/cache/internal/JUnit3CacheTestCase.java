@@ -26,8 +26,10 @@ import org.apache.geode.cache.RegionExistsException;
 import org.apache.geode.cache.TimeoutException;
 import org.apache.geode.cache.client.ClientCache;
 import org.apache.geode.cache.client.ClientCacheFactory;
+import org.apache.geode.cache.client.internal.InternalClientCache;
 import org.apache.geode.cache30.CacheSerializableRunnable;
 import org.apache.geode.internal.cache.GemFireCacheImpl;
+import org.apache.geode.internal.cache.InternalCache;
 import org.apache.geode.test.dunit.IgnoredException;
 import org.apache.geode.test.dunit.internal.JUnit3DistributedTestCase;
 
@@ -78,19 +80,19 @@ public abstract class JUnit3CacheTestCase extends JUnit3DistributedTestCase
   /**
    * Return a cache for obtaining regions, created lazily.
    */
-  public final Cache getCache() {
+  public final InternalCache getCache() {
     return delegate.getCache();
   }
 
-  public final Cache getCache(final CacheFactory factory) {
+  public final InternalCache getCache(final CacheFactory factory) {
     return delegate.getCache(factory);
   }
 
-  public final Cache getCache(final boolean client) {
+  public final InternalCache getCache(final boolean client) {
     return delegate.getCache(client);
   }
 
-  public final Cache getCache(final boolean client, final CacheFactory factory) {
+  public final InternalCache getCache(final boolean client, final CacheFactory factory) {
     return delegate.getCache(client, factory);
   }
 
@@ -99,7 +101,7 @@ public abstract class JUnit3CacheTestCase extends JUnit3DistributedTestCase
    *
    * @since GemFire 6.5
    */
-  public final ClientCache getClientCache(final ClientCacheFactory factory) {
+  public final InternalClientCache getClientCache(final ClientCacheFactory factory) {
     return delegate.getClientCache(factory);
   }
 

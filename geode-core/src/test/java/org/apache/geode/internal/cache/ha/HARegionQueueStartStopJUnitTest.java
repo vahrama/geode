@@ -23,6 +23,7 @@ import org.apache.geode.cache.CacheFactory;
 import org.apache.geode.distributed.DistributedSystem;
 import org.apache.geode.internal.Assert;
 import org.apache.geode.internal.cache.GemFireCacheImpl;
+import org.apache.geode.internal.cache.InternalCache;
 import org.apache.geode.internal.cache.RegionQueue;
 import org.apache.geode.test.junit.categories.ClientSubscriptionTest;
 import org.apache.geode.test.junit.categories.IntegrationTest;
@@ -48,11 +49,11 @@ public class HARegionQueueStartStopJUnitTest {
    * @return the cache instance
    * @throws CacheException - thrown if any exception occurs in cache creation
    */
-  private Cache createCache() throws CacheException {
+  private InternalCache createCache() throws CacheException {
     final Properties props = new Properties();
     props.setProperty(LOCATORS, "");
     props.setProperty(MCAST_PORT, "0");
-    return CacheFactory.create(DistributedSystem.connect(props));
+    return (InternalCache) CacheFactory.create(DistributedSystem.connect(props));
   }
 
   /**
@@ -64,7 +65,7 @@ public class HARegionQueueStartStopJUnitTest {
    * @throws CacheException
    * @throws InterruptedException
    */
-  private RegionQueue createHARegionQueue(String name, Cache cache)
+  private RegionQueue createHARegionQueue(String name, InternalCache cache)
       throws IOException, ClassNotFoundException, CacheException, InterruptedException {
     RegionQueue regionqueue = HARegionQueue.getHARegionQueueInstance(name, cache,
         HARegionQueue.NON_BLOCKING_HA_QUEUE, false);
@@ -75,7 +76,7 @@ public class HARegionQueueStartStopJUnitTest {
   public void testStartStop() {
     try {
       boolean exceptionOccured = false;
-      Cache cache = createCache();
+      InternalCache cache = createCache();
       createHARegionQueue("test", cache);
       Assert.assertTrue(HARegionQueue.getDispatchedMessagesMapForTesting() != null);
       HARegionQueue.stopHAServices();

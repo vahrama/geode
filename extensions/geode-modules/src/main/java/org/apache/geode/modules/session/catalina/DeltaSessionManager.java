@@ -14,33 +14,11 @@
  */
 package org.apache.geode.modules.session.catalina;
 
-import org.apache.geode.cache.CacheFactory;
-import org.apache.geode.cache.Region;
-import org.apache.geode.cache.query.Query;
-import org.apache.geode.cache.query.QueryService;
-import org.apache.geode.cache.query.SelectResults;
-import org.apache.geode.internal.cache.GemFireCacheImpl;
-import org.apache.geode.modules.session.catalina.internal.DeltaSessionStatistics;
-import org.apache.geode.modules.util.ContextMapper;
-import org.apache.geode.modules.util.RegionConfiguration;
-import org.apache.geode.modules.util.RegionHelper;
-import org.apache.catalina.Container;
-import org.apache.catalina.Context;
-import org.apache.catalina.Lifecycle;
-import org.apache.catalina.Loader;
-import org.apache.catalina.Pipeline;
-import org.apache.catalina.Session;
-import org.apache.catalina.Valve;
-import org.apache.catalina.session.ManagerBase;
-import org.apache.catalina.session.StandardSession;
-import org.apache.catalina.util.CustomObjectInputStream;
-import org.apache.juli.logging.Log;
-import org.apache.juli.logging.LogFactory;
-
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -58,9 +36,40 @@ import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-abstract public class DeltaSessionManager extends ManagerBase
+import javax.servlet.http.HttpSession;
+
+import org.apache.catalina.Container;
+import org.apache.catalina.Context;
+import org.apache.catalina.Lifecycle;
+import org.apache.catalina.Loader;
+import org.apache.catalina.Pipeline;
+import org.apache.catalina.Session;
+import org.apache.catalina.Valve;
+import org.apache.catalina.session.ManagerBase;
+import org.apache.catalina.session.StandardSession;
+import org.apache.catalina.util.CustomObjectInputStream;
+import org.apache.juli.logging.Log;
+import org.apache.juli.logging.LogFactory;
+
+import org.apache.geode.cache.CacheFactory;
+import org.apache.geode.cache.Region;
+import org.apache.geode.cache.client.ClientCache;
+import org.apache.geode.cache.query.Query;
+import org.apache.geode.cache.query.QueryService;
+import org.apache.geode.cache.query.SelectResults;
+import org.apache.geode.internal.cache.InternalCache;
+import org.apache.geode.modules.session.catalina.internal.DeltaSessionStatistics;
+import org.apache.geode.modules.util.ContextMapper;
+import org.apache.geode.modules.util.RegionConfiguration;
+import org.apache.geode.modules.util.RegionHelper;
+
+public abstract class DeltaSessionManager extends ManagerBase
     implements Lifecycle, PropertyChangeListener, SessionManager {
+
+  private static final Pattern PATTERN_SLASH = Pattern.compile("/", Pattern.LITERAL);
 
   /**
    * The number of rejected sessions.
@@ -73,12 +82,12 @@ abstract public class DeltaSessionManager extends ManagerBase
   protected int maxActiveSessions = -1;
 
   /**
-   * Has this <code>Manager</code> been started?
+   * Has this {@code Manager} been started?
    */
   protected AtomicBoolean started = new AtomicBoolean(false);
 
   /**
-   * The name of this <code>Manager</code>
+   * The name of this {@code Manager}
    */
   protected String name;
 
@@ -106,7 +115,7 @@ abstract public class DeltaSessionManager extends ManagerBase
    * This *MUST* only be assigned during start/startInternal otherwise it will be associated with
    * the incorrect context class loader.
    */
-  protected Log LOGGER;
+  protected Log logger;
 
   protected String regionName = DEFAULT_REGION_NAME;
 
@@ -137,7 +146,7 @@ abstract public class DeltaSessionManager extends ManagerBase
   private static final long TIMER_TASK_DELAY =
       Long.getLong("gemfiremodules.sessionTimerTaskDelay", 10000);
 
-  public DeltaSessionManager() {
+  protected DeltaSessionManager() {
     // Create the set to store sessions to be touched after get attribute requests
     this.sessionsToTouch = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
   }
@@ -193,7 +202,7 @@ abstract public class DeltaSessionManager extends ManagerBase
   public void setMaxActiveSessions(int maxActiveSessions) {
     int oldMaxActiveSessions = this.maxActiveSessions;
     this.maxActiveSessions = maxActiveSessions;
-    support.firePropertyChange("maxActiveSessions", new Integer(oldMaxActiveSessions),
+    this.support.firePropertyChange("maxActiveSessions", new Integer(oldMaxActiveSessions),
         new Integer(this.maxActiveSessions));
   }
 
@@ -245,7 +254,7 @@ abstract public class DeltaSessionManager extends ManagerBase
 
   @Override
   public boolean isBackingCacheAvailable() {
-    return sessionCache.isBackingCacheAvailable();
+    return this.sessionCache.isBackingCacheAvailable();
   }
 
   public void setPreferDeserializedForm(boolean enable) {
@@ -259,15 +268,15 @@ abstract public class DeltaSessionManager extends ManagerBase
 
   @Override
   public String getStatisticsName() {
-    return getContextName().replace("/", "");
+    return PATTERN_SLASH.matcher(getContextName()).replaceAll(Matcher.quoteReplacement(""));
   }
 
   @Override
   public Log getLogger() {
-    if (LOGGER == null) {
-      LOGGER = LogFactory.getLog(DeltaSessionManager.class);
+    if (this.logger == null) {
+      this.logger = LogFactory.getLog(DeltaSessionManager.class);
     }
-    return LOGGER;
+    return this.logger;
   }
 
   public SessionCache getSessionCache() {
@@ -298,18 +307,18 @@ abstract public class DeltaSessionManager extends ManagerBase
   @Override
   public void setContainer(Container container) {
     // De-register from the old Container (if any)
-    if ((this.container != null) && (this.container instanceof Context)) {
-      ((Context) this.container).removePropertyChangeListener(this);
+    if (Context.class.isInstance(this.container)) {
+      this.container.removePropertyChangeListener(this);
     }
 
     // Default processing provided by our superclass
     super.setContainer(container);
 
     // Register with the new Container (if any)
-    if ((this.container != null) && (this.container instanceof Context)) {
+    if (Context.class.isInstance(this.container)) {
       // Overwrite the max inactive interval with the context's session timeout.
       setMaxInactiveInterval(((Context) this.container).getSessionTimeout() * 60);
-      ((Context) this.container).addPropertyChangeListener(this);
+      this.container.addPropertyChangeListener(this);
     }
   }
 
@@ -363,15 +372,18 @@ abstract public class DeltaSessionManager extends ManagerBase
 
   protected void initializeSessionCache() {
     // Retrieve the cache
-    GemFireCacheImpl cache = (GemFireCacheImpl) CacheFactory.getAnyInstance();
+    InternalCache cache = (InternalCache) CacheFactory.getAnyInstance();
     if (cache == null) {
       throw new IllegalStateException(
           "No cache exists. Please configure either a PeerToPeerCacheLifecycleListener or ClientServerCacheLifecycleListener in the server.xml file.");
     }
 
     // Create the appropriate session cache
-    this.sessionCache = cache.isClient() ? new ClientServerSessionCache(this, cache)
-        : new PeerToPeerSessionCache(this, cache);
+    if (cache.isClient()) {
+      this.sessionCache = new ClientServerSessionCache(this, (ClientCache) cache);
+    } else {
+      this.sessionCache = new PeerToPeerSessionCache(this, cache);
+    }
 
     // Initialize the session cache
     this.sessionCache.initialize();
@@ -430,6 +442,7 @@ abstract public class DeltaSessionManager extends ManagerBase
     return this.rejectedSessions.get();
   }
 
+  @Override
   public void setRejectedSessions(int rejectedSessions) {
     this.rejectedSessions.set(rejectedSessions);
   }
@@ -458,7 +471,7 @@ abstract public class DeltaSessionManager extends ManagerBase
     while (sessionIds.hasNext()) {
       builder.append(sessionIds.next());
       if (sessionIds.hasNext()) {
-        builder.append(" ");
+        builder.append(' ');
       }
     }
     return builder.toString();
@@ -504,12 +517,11 @@ abstract public class DeltaSessionManager extends ManagerBase
       @Override
       public void run() {
         // Get the sessionIds to touch and clear the set inside synchronization
-        Set<String> sessionIds = null;
-        sessionIds = new HashSet<String>(getSessionsToTouch());
+        Set<String> sessionIds = new HashSet<>(getSessionsToTouch());
         getSessionsToTouch().clear();
 
         // Touch the sessions we currently have
-        if (sessionIds != null && (!sessionIds.isEmpty())) {
+        if (!sessionIds.isEmpty()) {
           getSessionCache().touchSessions(sessionIds);
           if (getLogger().isDebugEnabled()) {
             getLogger().debug(DeltaSessionManager.this + ": Touched sessions: " + sessionIds);
@@ -521,7 +533,7 @@ abstract public class DeltaSessionManager extends ManagerBase
   }
 
   protected void cancelTimer() {
-    if (timer != null) {
+    if (this.timer != null) {
       this.timer.cancel();
     }
   }
@@ -559,8 +571,8 @@ abstract public class DeltaSessionManager extends ManagerBase
     if (getLogger().isDebugEnabled()) {
       getLogger().debug(this + ": Registering JVM route binder valve");
     }
-    jvmRouteBinderValve = new JvmRouteBinderValve();
-    getPipeline().addValve(jvmRouteBinderValve);
+    this.jvmRouteBinderValve = new JvmRouteBinderValve();
+    getPipeline().addValve(this.jvmRouteBinderValve);
   }
 
   protected Pipeline getPipeline() {
@@ -571,8 +583,8 @@ abstract public class DeltaSessionManager extends ManagerBase
     if (getLogger().isDebugEnabled()) {
       getLogger().debug(this + ": Unregistering JVM route binder valve");
     }
-    if (jvmRouteBinderValve != null) {
-      getPipeline().removeValve(jvmRouteBinderValve);
+    if (this.jvmRouteBinderValve != null) {
+      getPipeline().removeValve(this.jvmRouteBinderValve);
     }
   }
 
@@ -580,20 +592,18 @@ abstract public class DeltaSessionManager extends ManagerBase
     if (getLogger().isDebugEnabled()) {
       getLogger().debug(this + ": Registering CommitSessionValve");
     }
-    commitSessionValve = new CommitSessionValve();
-    getPipeline().addValve(commitSessionValve);
+    this.commitSessionValve = new CommitSessionValve();
+    getPipeline().addValve(this.commitSessionValve);
   }
 
   protected void unregisterCommitSessionValve() {
     if (getLogger().isDebugEnabled()) {
       getLogger().debug(this + ": Unregistering CommitSessionValve");
     }
-    if (commitSessionValve != null) {
-      getPipeline().removeValve(commitSessionValve);
+    if (this.commitSessionValve != null) {
+      getPipeline().removeValve(this.commitSessionValve);
     }
   }
-
-  // ------------------------------ Lifecycle Methods
 
   /**
    * Process property change events from our associated Context.
@@ -604,7 +614,6 @@ abstract public class DeltaSessionManager extends ManagerBase
    * session timeout value specified in the web.xml.
    * <p>
    * The precedence order for setting the session timeout value is:
-   * <p>
    * <ol>
    * <li>the max inactive interval is set based on the Manager defined in the context.xml
    * <li>the max inactive interval is then overwritten by the value of the Context's session timeout
@@ -622,17 +631,16 @@ abstract public class DeltaSessionManager extends ManagerBase
     if (!(event.getSource() instanceof Context)) {
       return;
     }
-    Context context = (Context) event.getSource();
 
     // Process a relevant property change
     if (event.getPropertyName().equals("sessionTimeout")) {
       try {
-        int interval = ((Integer) event.getNewValue()).intValue();
+        int interval = (Integer) event.getNewValue();
         if (interval < RegionConfiguration.DEFAULT_MAX_INACTIVE_INTERVAL) {
           getLogger().warn("The configured session timeout of " + interval
               + " minutes is invalid. Using the original value of " + event.getOldValue()
               + " minutes.");
-          interval = ((Integer) event.getOldValue()).intValue();;
+          interval = (Integer) event.getOldValue();
         }
         // StandardContext.setSessionTimeout passes -1 if the configured timeout
         // is 0; otherwise it passes the value set in web.xml. If the interval
@@ -640,7 +648,7 @@ abstract public class DeltaSessionManager extends ManagerBase
         // default (no expiration); otherwise set it in seconds.
         setMaxInactiveInterval(interval == RegionConfiguration.DEFAULT_MAX_INACTIVE_INTERVAL
             ? RegionConfiguration.DEFAULT_MAX_INACTIVE_INTERVAL : interval * 60);
-      } catch (NumberFormatException e) {
+      } catch (NumberFormatException ignore) {
         getLogger()
             .error(sm.getString("standardManager.sessionTimeout", event.getNewValue().toString()));
       }
@@ -654,7 +662,7 @@ abstract public class DeltaSessionManager extends ManagerBase
    * @throws IOException if an input/output error occurs
    */
   protected void doUnload() throws IOException {
-    QueryService querySvc = sessionCache.getCache().getQueryService();
+    QueryService querySvc = this.sessionCache.getCache().getQueryService();
     Context context = getTheContext();
     if (context == null) {
       return;
@@ -663,10 +671,10 @@ abstract public class DeltaSessionManager extends ManagerBase
     if (getRegionName().startsWith("/")) {
       regionName = getRegionName();
     } else {
-      regionName = "/" + getRegionName();
+      regionName = '/' + getRegionName();
     }
     Query query = querySvc.newQuery("select s.id from " + regionName
-        + " as s where s.contextName = '" + context.getPath() + "'");
+        + " as s where s.contextName = '" + context.getPath() + '\'');
     getLogger().debug("Query: " + query.getQueryString());
 
     SelectResults results;
@@ -690,9 +698,11 @@ abstract public class DeltaSessionManager extends ManagerBase
     if (getLogger().isDebugEnabled()) {
       getLogger().debug("Unloading sessions to " + store.getAbsolutePath());
     }
+
     FileOutputStream fos = null;
     BufferedOutputStream bos = null;
     ObjectOutputStream oos = null;
+
     boolean error = false;
     try {
       fos = new FileOutputStream(store.getAbsolutePath());
@@ -704,31 +714,13 @@ abstract public class DeltaSessionManager extends ManagerBase
       throw e;
     } finally {
       if (error) {
-        if (oos != null) {
-          try {
-            oos.close();
-          } catch (IOException ioe) {
-            // Ignore
-          }
-        }
-        if (bos != null) {
-          try {
-            bos.close();
-          } catch (IOException ioe) {
-            // Ignore
-          }
-        }
-        if (fos != null) {
-          try {
-            fos.close();
-          } catch (IOException ioe) {
-            // Ignore
-          }
-        }
+        closeQuietly(oos);
+        closeQuietly(bos);
+        closeQuietly(fos);
       }
     }
 
-    ArrayList<DeltaSessionInterface> list = new ArrayList<DeltaSessionInterface>();
+    ArrayList<DeltaSessionInterface> list = new ArrayList<>();
     Iterator<String> elements = results.iterator();
     while (elements.hasNext()) {
       String id = elements.next();
@@ -742,7 +734,7 @@ abstract public class DeltaSessionManager extends ManagerBase
     if (getLogger().isDebugEnabled())
       getLogger().debug("Unloading " + list.size() + " sessions");
     try {
-      oos.writeObject(new Integer(list.size()));
+      oos.writeObject(list.size());
       for (DeltaSessionInterface session : list) {
         if (session instanceof StandardSession) {
           StandardSession standardSession = (StandardSession) session;
@@ -755,24 +747,12 @@ abstract public class DeltaSessionManager extends ManagerBase
       }
     } catch (IOException e) {
       getLogger().error("Exception unloading sessions", e);
-      try {
-        oos.close();
-      } catch (IOException f) {
-        // Ignore
-      }
+      closeQuietly(oos);
       throw e;
     }
 
     // Flush and close the output stream
-    try {
-      oos.flush();
-    } finally {
-      try {
-        oos.close();
-      } catch (IOException f) {
-        // Ignore
-      }
-    }
+    closeQuietly(oos);
 
     // Locally destroy the sessions we just wrote
     if (getSessionCache().isClientServer()) {
@@ -783,22 +763,6 @@ abstract public class DeltaSessionManager extends ManagerBase
         getSessionCache().getOperatingRegion().localDestroy(session.getId());
       }
     }
-
-    // // Expire all the sessions we just wrote
-    // if (getLogger().isDebugEnabled()) {
-    // getLogger().debug("Expiring " + list.size() + " persisted sessions");
-    // }
-    // Iterator<StandardSession> expires = list.iterator();
-    // while (expires.hasNext()) {
-    // StandardSession session = expires.next();
-    // try {
-    // session.expire(false);
-    // } catch (Throwable t) {
-    //// ExceptionUtils.handleThrowable(t);
-    // } finally {
-    // session.recycle();
-    // }
-    // }
 
     if (getLogger().isDebugEnabled()) {
       getLogger().debug("Unloading complete");
@@ -827,17 +791,18 @@ abstract public class DeltaSessionManager extends ManagerBase
     if (getLogger().isDebugEnabled()) {
       getLogger().debug("Loading sessions from " + store.getAbsolutePath());
     }
+
     FileInputStream fis = null;
     BufferedInputStream bis = null;
-    ObjectInputStream ois = null;
-    Loader loader = null;
-    ClassLoader classLoader = null;
+    ObjectInputStream ois;
     try {
       fis = new FileInputStream(store.getAbsolutePath());
       bis = new BufferedInputStream(fis);
+      Loader loader = null;
       if (getTheContext() != null) {
         loader = getTheContext().getLoader();
       }
+      ClassLoader classLoader = null;
       if (loader != null) {
         classLoader = loader.getClassLoader();
       }
@@ -854,7 +819,7 @@ abstract public class DeltaSessionManager extends ManagerBase
       }
     } catch (FileNotFoundException e) {
       if (getLogger().isDebugEnabled()) {
-        getLogger().debug("No persisted data file found");
+        getLogger().debug("No persisted data file found", e);
       }
       return;
     } catch (IOException e) {
@@ -862,14 +827,14 @@ abstract public class DeltaSessionManager extends ManagerBase
       if (fis != null) {
         try {
           fis.close();
-        } catch (IOException f) {
+        } catch (IOException ignore) {
           // Ignore
         }
       }
       if (bis != null) {
         try {
           bis.close();
-        } catch (IOException f) {
+        } catch (IOException ignore) {
           // Ignore
         }
       }
@@ -878,8 +843,7 @@ abstract public class DeltaSessionManager extends ManagerBase
 
     // Load the previously unloaded active sessions
     try {
-      Integer count = (Integer) ois.readObject();
-      int n = count.intValue();
+      int n = (Integer) ois.readObject();
       if (getLogger().isDebugEnabled()) {
         getLogger().debug("Loading " + n + " persisted sessions");
       }
@@ -888,7 +852,7 @@ abstract public class DeltaSessionManager extends ManagerBase
         session.readObjectData(ois);
         session.setManager(this);
 
-        Region region = getSessionCache().getOperatingRegion();
+        Region<String, HttpSession> region = getSessionCache().getOperatingRegion();
         DeltaSessionInterface existingSession = (DeltaSessionInterface) region.get(session.getId());
         // Check whether the existing session is newer
         if (existingSession != null
@@ -911,19 +875,11 @@ abstract public class DeltaSessionManager extends ManagerBase
         session.activate();
         add(session);
       }
-    } catch (ClassNotFoundException e) {
+    } catch (ClassNotFoundException | IOException e) {
       getLogger().error(e);
       try {
         ois.close();
-      } catch (IOException f) {
-        // Ignore
-      }
-      throw e;
-    } catch (IOException e) {
-      getLogger().error(e);
-      try {
-        ois.close();
-      } catch (IOException f) {
+      } catch (IOException ignore) {
         // Ignore
       }
       throw e;
@@ -931,7 +887,7 @@ abstract public class DeltaSessionManager extends ManagerBase
       // Close the input stream
       try {
         ois.close();
-      } catch (IOException f) {
+      } catch (IOException ignore) {
         // ignored
       }
 
@@ -952,16 +908,14 @@ abstract public class DeltaSessionManager extends ManagerBase
     } else {
       storeDir += System.getProperty("file.separator") + "temp";
     }
-    File file = new File(storeDir, ctxPath.replaceAll("/", "_") + ".sessions.ser");
-
-    return (file);
+    return new File(storeDir, PATTERN_SLASH.matcher(ctxPath).replaceAll("_") + ".sessions.ser");
   }
 
   @Override
   public String toString() {
-    return new StringBuilder().append(getClass().getSimpleName()).append("[").append("container=")
+    return new StringBuilder().append(getClass().getSimpleName()).append('[').append("container=")
         .append(getTheContext()).append("; regionName=").append(this.regionName)
-        .append("; regionAttributesId=").append(this.regionAttributesId).append("]").toString();
+        .append("; regionAttributesId=").append(this.regionAttributesId).append(']').toString();
   }
 
   protected String getContextName() {
@@ -969,12 +923,22 @@ abstract public class DeltaSessionManager extends ManagerBase
   }
 
   public Context getTheContext() {
-    if (getContainer() instanceof Context) {
+    if (Context.class.isInstance(getContainer())) {
       return (Context) getContainer();
     } else {
       getLogger().error("Unable to unload sessions - container is of type "
           + getContainer().getClass().getName() + " instead of StandardContext");
       return null;
+    }
+  }
+
+  private static void closeQuietly(Closeable closeable) {
+    if (closeable == null) {
+      return;
+    }
+    try {
+      closeable.close();
+    } catch (IOException ignore) {
     }
   }
 }

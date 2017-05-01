@@ -479,7 +479,7 @@ public class CompiledComparison extends AbstractCompiledValue
       }
     }
     if (conditioningNeeded) {
-      return QueryUtils.getconditionedIndexResults(set, indexInfo, context, indexFieldsSize,
+      return QueryUtils.getConditionedIndexResults(set, indexInfo, context, indexFieldsSize,
           completeExpansionNeeded, iterOperands, indpndntItr);
     } else {
       return set;

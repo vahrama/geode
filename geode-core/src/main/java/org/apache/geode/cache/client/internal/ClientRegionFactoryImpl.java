@@ -29,7 +29,6 @@ import org.apache.geode.cache.client.ClientRegionFactory;
 import org.apache.geode.cache.client.ClientRegionShortcut;
 import org.apache.geode.cache.client.Pool;
 import org.apache.geode.compression.Compressor;
-import org.apache.geode.internal.cache.GemFireCacheImpl;
 import org.apache.geode.internal.cache.LocalRegion;
 import org.apache.geode.internal.cache.UserSpecifiedRegionAttributes;
 
@@ -41,7 +40,7 @@ import org.apache.geode.internal.cache.UserSpecifiedRegionAttributes;
 
 public class ClientRegionFactoryImpl<K, V> implements ClientRegionFactory<K, V> {
   private final AttributesFactory<K, V> attrsFactory;
-  private final GemFireCacheImpl cache;
+  private final InternalClientCache cache;
 
   /**
    * Constructs a ClientRegionFactory by creating a DistributedSystem and a Cache. If no
@@ -51,7 +50,7 @@ public class ClientRegionFactoryImpl<K, V> implements ClientRegionFactory<K, V> 
    *
    * @param pra the region shortcut to use
    */
-  public ClientRegionFactoryImpl(GemFireCacheImpl cache, ClientRegionShortcut pra) {
+  public ClientRegionFactoryImpl(InternalClientCache cache, ClientRegionShortcut pra) {
     this.cache = cache;
     RegionAttributes ra = cache.getRegionAttributes(pra.toString());
     if (ra == null) {
@@ -70,7 +69,7 @@ public class ClientRegionFactoryImpl<K, V> implements ClientRegionFactory<K, V> 
    *
    * @param refid the name of the region attributes to use
    */
-  public ClientRegionFactoryImpl(GemFireCacheImpl cache, String refid) {
+  public ClientRegionFactoryImpl(InternalClientCache cache, String refid) {
     this.cache = cache;
     RegionAttributes ra = cache.getRegionAttributes(refid);
     if (ra == null) {
@@ -90,7 +89,7 @@ public class ClientRegionFactoryImpl<K, V> implements ClientRegionFactory<K, V> 
   /**
    * Returns the cache used by this factory.
    */
-  private GemFireCacheImpl getCache() {
+  private InternalClientCache getCache() {
     return this.cache;
   }
 
@@ -219,7 +218,7 @@ public class ClientRegionFactoryImpl<K, V> implements ClientRegionFactory<K, V> 
   @SuppressWarnings("deprecation")
   private RegionAttributes<K, V> createRegionAttributes() {
     RegionAttributes<K, V> ra = this.attrsFactory.create();
-    if (ra.getPoolName() == null || "".equals(ra.getPoolName())) {
+    if (ra.getPoolName() == null || ra.getPoolName().isEmpty()) {
       UserSpecifiedRegionAttributes<K, V> ura = (UserSpecifiedRegionAttributes<K, V>) ra;
       if (ura.requiresPoolName) {
         Pool dp = getDefaultPool();

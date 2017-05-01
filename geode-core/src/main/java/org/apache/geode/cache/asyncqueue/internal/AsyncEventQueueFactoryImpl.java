@@ -189,7 +189,7 @@ public class AsyncEventQueueFactoryImpl implements AsyncEventQueueFactory {
           create(AsyncEventQueueImpl.getSenderIdFromAsyncEventQueueId(asyncQueueId));
       AsyncEventQueueImpl queue = new AsyncEventQueueImpl(sender, listener);
       asyncEventQueue = queue;
-      ((GemFireCacheImpl) cache).addAsyncEventQueue(queue);
+      this.cache.addAsyncEventQueue(queue);
     } else if (this.cache instanceof CacheCreation) {
       asyncEventQueue = new AsyncEventQueueCreation(asyncQueueId, attrs, listener);
       ((CacheCreation) cache).addAsyncEventQueue(asyncEventQueue);
@@ -220,7 +220,7 @@ public class AsyncEventQueueFactoryImpl implements AsyncEventQueueFactory {
 
       if (this.cache instanceof GemFireCacheImpl) {
         sender = new ParallelAsyncEventQueueImpl(this.cache, this.attrs);
-        ((GemFireCacheImpl) this.cache).addGatewaySender(sender);
+        this.cache.addGatewaySender(sender);
         if (!this.attrs.isManualStart()) {
           sender.start();
         }
@@ -229,19 +229,12 @@ public class AsyncEventQueueFactoryImpl implements AsyncEventQueueFactory {
         ((CacheCreation) this.cache).addGatewaySender(sender);
       }
     } else {
-      // if (this.attrs.getOrderPolicy() != null) {
-      // if (this.attrs.getDispatcherThreads() == GatewaySender.DEFAULT_DISPATCHER_THREADS) {
-      // throw new AsyncEventQueueConfigurationException(
-      // LocalizedStrings.AsyncEventQueue_INVALID_ORDER_POLICY_CONCURRENCY_0
-      // .toLocalizedString(id));
-      // }
-      // }
       if (this.attrs.getOrderPolicy() == null && this.attrs.getDispatcherThreads() > 1) {
         this.attrs.policy = GatewaySender.DEFAULT_ORDER_POLICY;
       }
       if (this.cache instanceof GemFireCacheImpl) {
         sender = new SerialAsyncEventQueueImpl(this.cache, this.attrs);
-        ((GemFireCacheImpl) this.cache).addGatewaySender(sender);
+        this.cache.addGatewaySender(sender);
         if (!this.attrs.isManualStart()) {
           sender.start();
         }

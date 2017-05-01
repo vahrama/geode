@@ -42,19 +42,20 @@ import org.apache.geode.cache.query.internal.aggregate.MaxMin;
 import org.apache.geode.cache.query.internal.aggregate.Sum;
 import org.apache.geode.cache.query.internal.aggregate.SumDistinct;
 import org.apache.geode.cache.query.internal.aggregate.SumDistinctPRQueryNode;
+import org.apache.geode.internal.cache.InternalCache;
 import org.apache.geode.test.junit.categories.UnitTest;
 
 @Category(UnitTest.class)
 public class CompiledAggregateFunctionJUnitTest {
 
   private Mockery context;
-  private Cache cache;
+  private InternalCache cache;
   private List bucketList;
 
   @Before
   public void setUp() throws Exception {
     context = new Mockery();
-    cache = context.mock(Cache.class);
+    cache = context.mock(InternalCache.class);
     bucketList = new ArrayList();
     bucketList.add(Integer.valueOf(1));
   }

@@ -12,12 +12,29 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-
 package org.apache.geode.internal.cache;
+
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import org.apache.logging.log4j.Logger;
 
 import org.apache.geode.GemFireIOException;
 import org.apache.geode.InvalidDeltaException;
-import org.apache.geode.cache.*;
+import org.apache.geode.cache.CacheEvent;
+import org.apache.geode.cache.CacheWriter;
+import org.apache.geode.cache.CacheWriterException;
+import org.apache.geode.cache.DiskAccessException;
+import org.apache.geode.cache.EntryNotFoundException;
+import org.apache.geode.cache.Operation;
+import org.apache.geode.cache.RegionDestroyedException;
+import org.apache.geode.cache.TimeoutException;
+import org.apache.geode.cache.TransactionId;
 import org.apache.geode.cache.query.IndexMaintenanceException;
 import org.apache.geode.cache.query.QueryException;
 import org.apache.geode.cache.query.internal.index.IndexManager;
@@ -37,7 +54,12 @@ import org.apache.geode.internal.cache.tier.sockets.CacheClientNotifier;
 import org.apache.geode.internal.cache.tier.sockets.ClientProxyMembershipID;
 import org.apache.geode.internal.cache.tier.sockets.ClientUpdateMessageImpl;
 import org.apache.geode.internal.cache.tier.sockets.HAEventWrapper;
-import org.apache.geode.internal.cache.versions.*;
+import org.apache.geode.internal.cache.versions.ConcurrentCacheModificationException;
+import org.apache.geode.internal.cache.versions.RegionVersionVector;
+import org.apache.geode.internal.cache.versions.VersionHolder;
+import org.apache.geode.internal.cache.versions.VersionSource;
+import org.apache.geode.internal.cache.versions.VersionStamp;
+import org.apache.geode.internal.cache.versions.VersionTag;
 import org.apache.geode.internal.cache.wan.GatewaySenderEventImpl;
 import org.apache.geode.internal.concurrent.MapCallbackAdapter;
 import org.apache.geode.internal.i18n.LocalizedStrings;
@@ -54,21 +76,12 @@ import org.apache.geode.internal.offheap.annotations.Unretained;
 import org.apache.geode.internal.sequencelog.EntryLogger;
 import org.apache.geode.internal.util.concurrent.CustomEntryConcurrentHashMap;
 
-import org.apache.logging.log4j.Logger;
-
-import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
-
 /**
  * Abstract implementation of {@link RegionMap}that has all the common behavior.
  *
  * @since GemFire 3.5.1
- *
- *
  */
-
 public abstract class AbstractRegionMap implements RegionMap {
-
   private static final Logger logger = LogService.getLogger();
 
   /** The underlying map for this region. */
@@ -81,10 +94,15 @@ public abstract class AbstractRegionMap implements RegionMap {
   static Runnable testHookRunnableFor48182 = null;
 
   private RegionEntryFactory entryFactory;
-  private Attributes attr;
-  private transient Object owner; // the region that owns this map
 
-  protected AbstractRegionMap(InternalRegionArguments internalRegionArgs) {}
+  private Attributes attr;
+
+  // the region that owns this map
+  private Object owner;
+
+  protected AbstractRegionMap(InternalRegionArguments internalRegionArgs) {
+    // do nothing
+  }
 
   protected void initialize(Object owner, Attributes attr,
       InternalRegionArguments internalRegionArgs, boolean isLRU) {
@@ -93,22 +111,19 @@ public abstract class AbstractRegionMap implements RegionMap {
     _setMap(createConcurrentMap(attr.initialCapacity, attr.loadFactor, attr.concurrencyLevel, false,
         new AbstractRegionEntry.HashRegionEntryCreator()));
 
-    final GemFireCacheImpl cache;
     boolean isDisk;
-    boolean withVersioning = false;
-    boolean offHeap = false;
+    boolean withVersioning;
+    boolean offHeap;
     if (owner instanceof LocalRegion) {
       LocalRegion region = (LocalRegion) owner;
       isDisk = region.getDiskRegion() != null;
-      cache = region.getGemFireCache();
       withVersioning = region.getConcurrencyChecksEnabled();
       offHeap = region.getOffHeap();
     } else if (owner instanceof PlaceHolderDiskRegion) {
-      offHeap = ((PlaceHolderDiskRegion) owner).getOffHeap();
+      offHeap = ((RegionEntryContext) owner).getOffHeap();
       isDisk = true;
       withVersioning =
-          ((PlaceHolderDiskRegion) owner).getFlags().contains(DiskRegionFlag.IS_WITH_VERSIONING);
-      cache = GemFireCacheImpl.getInstance();
+          ((DiskRegionView) owner).getFlags().contains(DiskRegionFlag.IS_WITH_VERSIONING);
     } else {
       throw new IllegalStateException("expected LocalRegion or PlaceHolderDiskRegion");
     }
@@ -117,15 +132,15 @@ public abstract class AbstractRegionMap implements RegionMap {
         attr.statisticsEnabled, isLRU, isDisk, withVersioning, offHeap));
   }
 
-  protected CustomEntryConcurrentHashMap<Object, Object> createConcurrentMap(int initialCapacity,
+  private CustomEntryConcurrentHashMap<Object, Object> createConcurrentMap(int initialCapacity,
       float loadFactor, int concurrencyLevel, boolean isIdentityMap,
       CustomEntryConcurrentHashMap.HashEntryCreator<Object, Object> entryCreator) {
     if (entryCreator != null) {
-      return new CustomEntryConcurrentHashMap<Object, Object>(initialCapacity, loadFactor,
-          concurrencyLevel, isIdentityMap, entryCreator);
+      return new CustomEntryConcurrentHashMap<>(initialCapacity, loadFactor, concurrencyLevel,
+          isIdentityMap, entryCreator);
     } else {
-      return new CustomEntryConcurrentHashMap<Object, Object>(initialCapacity, loadFactor,
-          concurrencyLevel, isIdentityMap);
+      return new CustomEntryConcurrentHashMap<>(initialCapacity, loadFactor, concurrencyLevel,
+          isIdentityMap);
     }
   }
 
@@ -1548,7 +1563,6 @@ public abstract class AbstractRegionMap implements RegionMap {
     final boolean isDebugEnabled = logger.isDebugEnabled();
 
     final LocalRegion owner = _getOwner();
-    owner.checkBeforeEntrySync(txEvent);
 
     final boolean isRegionReady = !inTokenMode;
     final boolean hasRemoteOrigin = !((TXId) txId).getMemberId().equals(owner.getMyId());
@@ -2337,7 +2351,6 @@ public abstract class AbstractRegionMap implements RegionMap {
       TXEntryState txEntryState, VersionTag versionTag, long tailKey) {
     // boolean didInvalidate = false;
     final LocalRegion owner = _getOwner();
-    owner.checkBeforeEntrySync(txEvent);
 
     @Released
     EntryEventImpl cbEvent = null;
@@ -2408,8 +2421,7 @@ public abstract class AbstractRegionMap implements RegionMap {
                     } catch (RegionClearedException rce) {
                       clearOccured = true;
                     }
-                    owner.txApplyInvalidatePart2(oldRe, oldRe.getKey(), didDestroy, true,
-                        clearOccured);
+                    owner.txApplyInvalidatePart2(oldRe, oldRe.getKey(), didDestroy, true);
                     // didInvalidate = true;
                     if (invokeCallbacks) {
                       switchEventOwnerAndOriginRemote(cbEvent, hasRemoteOrigin);
@@ -2455,7 +2467,7 @@ public abstract class AbstractRegionMap implements RegionMap {
                 } catch (RegionClearedException rce) {
                   clearOccured = true;
                 }
-                owner.txApplyInvalidatePart2(newRe, newRe.getKey(), didDestroy, true, clearOccured);
+                owner.txApplyInvalidatePart2(newRe, newRe.getKey(), didDestroy, true);
 
                 if (invokeCallbacks) {
                   switchEventOwnerAndOriginRemote(cbEvent, hasRemoteOrigin);
@@ -2527,7 +2539,7 @@ public abstract class AbstractRegionMap implements RegionMap {
                 } catch (RegionClearedException rce) {
                   clearOccured = true;
                 }
-                owner.txApplyInvalidatePart2(re, re.getKey(), didDestroy, true, clearOccured);
+                owner.txApplyInvalidatePart2(re, re.getKey(), didDestroy, true);
                 // didInvalidate = true;
                 if (invokeCallbacks) {
                   switchEventOwnerAndOriginRemote(cbEvent, hasRemoteOrigin);
@@ -3080,7 +3092,6 @@ public abstract class AbstractRegionMap implements RegionMap {
 
     Operation putOp = p_putOp;
 
-    owner.checkBeforeEntrySync(txEvent);
     Object newValue = nv;
 
     final boolean hasRemoteOrigin = !((TXId) txId).getMemberId().equals(owner.getMyId());
@@ -3175,7 +3186,7 @@ public abstract class AbstractRegionMap implements RegionMap {
                       long lastMod = owner.cacheTimeMillis();
                       EntryLogger.logTXPut(_getOwnerObject(), key, nv);
                       re.updateStatsForPut(lastMod, lastMod);
-                      owner.txApplyPutPart2(re, re.getKey(), newValue, lastMod, false, didDestroy,
+                      owner.txApplyPutPart2(re, re.getKey(), lastMod, false, didDestroy,
                           clearOccured);
                     }
                   } finally {
@@ -3200,7 +3211,7 @@ public abstract class AbstractRegionMap implements RegionMap {
                 }
               }
               if (didDestroy && !opCompleted) {
-                owner.txApplyInvalidatePart2(re, re.getKey(), true, false, false /* clear */);
+                owner.txApplyInvalidatePart2(re, re.getKey(), true, false /* clear */);
               }
             }
             if (owner.concurrencyChecksEnabled && txEntryState != null && cbEvent != null) {
@@ -3275,8 +3286,8 @@ public abstract class AbstractRegionMap implements RegionMap {
                       long lastMod = owner.cacheTimeMillis();
                       EntryLogger.logTXPut(_getOwnerObject(), key, nv);
                       oldRe.updateStatsForPut(lastMod, lastMod);
-                      owner.txApplyPutPart2(oldRe, oldRe.getKey(), newValue, lastMod, false,
-                          didDestroy, clearOccured);
+                      owner.txApplyPutPart2(oldRe, oldRe.getKey(), lastMod, false, didDestroy,
+                          clearOccured);
                     }
                   } finally {
                     if (oldRe != null && owner.indexMaintenanceSynchronous) {
@@ -3341,7 +3352,7 @@ public abstract class AbstractRegionMap implements RegionMap {
                   long lastMod = owner.cacheTimeMillis();
                   EntryLogger.logTXPut(_getOwnerObject(), key, nv);
                   newRe.updateStatsForPut(lastMod, lastMod);
-                  owner.txApplyPutPart2(newRe, newRe.getKey(), newValue, lastMod, true, didDestroy,
+                  owner.txApplyPutPart2(newRe, newRe.getKey(), lastMod, true, didDestroy,
                       clearOccured);
                 }
               } finally {

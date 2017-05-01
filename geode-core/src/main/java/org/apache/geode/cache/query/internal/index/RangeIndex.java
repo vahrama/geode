@@ -117,8 +117,8 @@ public class RangeIndex extends AbstractIndex {
   }
 
   @Override
-  void instantiateEvaluator(IndexCreationHelper ich) {
-    this.evaluator = new IMQEvaluator(ich);
+  void instantiateEvaluator(IndexCreationHelper indexCreationHelper) {
+    this.evaluator = new IMQEvaluator(indexCreationHelper);
   }
 
   @Override
@@ -992,7 +992,7 @@ public class RangeIndex extends AbstractIndex {
     if (entriesMap == null || result == null)
       return;
     QueryObserver observer = QueryObserverHolder.getInstance();
-    if (verifyLimit(result, limit, context)) {
+    if (verifyLimit(result, limit)) {
       observer.limitAppliedAtIndexLevel(this, limit, result);
       return;
     }
@@ -1010,7 +1010,7 @@ public class RangeIndex extends AbstractIndex {
         if (keysToRemove == null || !keysToRemove.remove(key)) {
           RegionEntryToValuesMap rvMap = (RegionEntryToValuesMap) entry.getValue();
           rvMap.addValuesToCollection(result, limit, context);
-          if (verifyLimit(result, limit, context)) {
+          if (verifyLimit(result, limit)) {
             observer.limitAppliedAtIndexLevel(this, limit, result);
             return;
           }
@@ -1048,7 +1048,7 @@ public class RangeIndex extends AbstractIndex {
     if (entriesMap == null || result == null)
       return;
     QueryObserver observer = QueryObserverHolder.getInstance();
-    if (verifyLimit(result, limit, context)) {
+    if (verifyLimit(result, limit)) {
       observer.limitAppliedAtIndexLevel(this, limit, result);
       return;
     }
@@ -1062,7 +1062,7 @@ public class RangeIndex extends AbstractIndex {
       if (foundKeyToRemove || !keyToRemove.equals(entry.getKey())) {
         RegionEntryToValuesMap rvMap = (RegionEntryToValuesMap) entry.getValue();
         rvMap.addValuesToCollection(result, limit, context);
-        if (verifyLimit(result, limit, context)) {
+        if (verifyLimit(result, limit)) {
           observer.limitAppliedAtIndexLevel(this, limit, result);
           return;
         }
@@ -1078,8 +1078,7 @@ public class RangeIndex extends AbstractIndex {
       throws FunctionDomainException, TypeMismatchException, NameResolutionException,
       QueryInvocationTargetException {
     boolean limitApplied = false;
-    if (entriesMap == null || result == null
-        || (limitApplied = verifyLimit(result, limit, context))) {
+    if (entriesMap == null || result == null || (limitApplied = verifyLimit(result, limit))) {
       if (limitApplied) {
         QueryObserver observer = QueryObserverHolder.getInstance();
         if (observer != null) {
@@ -1106,7 +1105,7 @@ public class RangeIndex extends AbstractIndex {
           RegionEntryToValuesMap rvMap = (RegionEntryToValuesMap) entry.getValue();
           rvMap.addValuesToCollection(result, iterOps, runtimeItr, context, projAttrib,
               intermediateResults, isIntersection, limit);
-          if (verifyLimit(result, limit, context)) {
+          if (verifyLimit(result, limit)) {
             observer.limitAppliedAtIndexLevel(this, limit, result);
             break;
           }
@@ -1524,10 +1523,6 @@ public class RangeIndex extends AbstractIndex {
 
     public void incReadLockCount(int delta) {
       this.vsdStats.incReadLockCount(delta);
-    }
-
-    public long getUseTime() {
-      return this.vsdStats.getUseTime();
     }
 
     /**

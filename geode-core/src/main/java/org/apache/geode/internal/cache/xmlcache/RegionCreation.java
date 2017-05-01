@@ -47,6 +47,7 @@ import org.apache.geode.cache.query.SelectResults;
 import org.apache.geode.cache.query.internal.index.IndexCreationData;
 import org.apache.geode.cache.snapshot.RegionSnapshotService;
 import org.apache.geode.internal.cache.GemFireCacheImpl;
+import org.apache.geode.internal.cache.InternalCache;
 import org.apache.geode.internal.cache.LocalRegion;
 import org.apache.geode.internal.cache.extension.Extensible;
 import org.apache.geode.internal.cache.extension.ExtensionPoint;
@@ -252,7 +253,7 @@ public class RegionCreation implements Region, Extensible<Region<?, ?>> {
     extensionPoint.beforeCreate(cache);
 
     try {
-      root = ((GemFireCacheImpl) cache).basicCreateRegion(this.name,
+      root = ((InternalCache) cache).basicCreateRegion(this.name,
           new AttributesFactory(this.attrs).create());
     } catch (RegionExistsException ex) {
       root = ex.getRegion();
