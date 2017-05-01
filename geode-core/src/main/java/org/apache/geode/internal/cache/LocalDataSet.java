@@ -265,7 +265,7 @@ public class LocalDataSet implements Region, QueryExecutor {
     this.proxy.forceRolling();
   }
 
-  public GemFireCacheImpl getCache() {
+  public InternalCache getCache() {
     return this.proxy.getCache();
   }
 

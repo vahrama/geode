@@ -108,7 +108,7 @@ import org.apache.geode.internal.cache.DiskStoreAttributes;
 import org.apache.geode.internal.cache.DiskWriteAttributesImpl;
 import org.apache.geode.internal.cache.EvictionAttributesImpl;
 import org.apache.geode.internal.cache.FixedPartitionAttributesImpl;
-import org.apache.geode.internal.cache.GemFireCacheImpl;
+import org.apache.geode.internal.cache.InternalCache;
 import org.apache.geode.internal.cache.PartitionAttributesImpl;
 import org.apache.geode.internal.cache.PartitionedRegionHelper;
 import org.apache.geode.internal.cache.lru.LRUCapacityController;
@@ -332,8 +332,9 @@ public class CacheXmlParser extends CacheXml implements ContentHandler {
    * @throws TimeoutException
    * @throws CacheWriterException
    * @throws RegionExistsException
+   * @param cache
    */
-  public void create(GemFireCacheImpl cache)
+  public void create(InternalCache cache)
       throws TimeoutException, GatewayException, CacheWriterException, RegionExistsException {
     if (this.cache == null) {
       String s = "A cache or client-cache element is required";
