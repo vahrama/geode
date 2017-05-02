@@ -488,9 +488,9 @@ public abstract class AbstractIndex implements IndexProtocol {
   }
 
   @Override
-  public boolean addAllIndexMappings(Collection c) throws IMQException {
-    for (Object regionEntry : c) {
-      this.addMapping((RegionEntry) regionEntry);
+  public boolean addAllIndexMappings(Collection<RegionEntry> c) throws IMQException {
+    for (RegionEntry regionEntry : c) {
+      addMapping(regionEntry);
     }
     // if no exception, then success
     return true;
@@ -507,9 +507,9 @@ public abstract class AbstractIndex implements IndexProtocol {
   }
 
   @Override
-  public boolean removeAllIndexMappings(Collection c) throws IMQException {
-    for (Object regionEntry : c) {
-      removeMapping((RegionEntry) regionEntry, OTHER_OP);
+  public boolean removeAllIndexMappings(Collection<RegionEntry> c) throws IMQException {
+    for (RegionEntry regionEntry : c) {
+      removeMapping(regionEntry, OTHER_OP);
     }
     // if no exception, then success
     return true;

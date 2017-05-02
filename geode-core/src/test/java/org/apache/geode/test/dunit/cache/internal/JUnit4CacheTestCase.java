@@ -213,10 +213,10 @@ public abstract class JUnit4CacheTestCase extends JUnit4DistributedTestCase
    * Finish what {@code beginCacheXml} started. It does this be generating a cache.xml file and then
    * creating a real cache using that cache.xml.
    */
-  public final void finishCacheXml(final String name, final boolean useSchema,
+  public final void finishCacheXml(final File root, final String name, final boolean useSchema,
       final String xmlVersion) {
     synchronized (JUnit4CacheTestCase.class) {
-      File dir = new File("XML_" + xmlVersion);
+      File dir = new File(root, "XML_" + xmlVersion);
       dir.mkdirs();
       File file = new File(dir, name + ".xml");
       try {
@@ -224,8 +224,8 @@ public abstract class JUnit4CacheTestCase extends JUnit4DistributedTestCase
         CacheXmlGenerator.generate(cache, pw, useSchema, xmlVersion);
         pw.close();
       } catch (IOException ex) {
-        Assert.fail("IOException during cache.xml generation to " + file, ex); // TODO: remove error
-                                                                               // handling
+        // TODO: remove error handling
+        Assert.fail("IOException during cache.xml generation to " + file, ex);
       }
       cache = null;
       GemFireCacheImpl.testCacheXml = file;

@@ -2034,9 +2034,7 @@ public class PartitionedRegion extends LocalRegion
       }
     } catch (RegionDestroyedException rde) {
       if (!rde.getRegionFullPath().equals(getFullPath())) {
-        RegionDestroyedException rde2 = new RegionDestroyedException(toString(), getFullPath());
-        rde2.initCause(rde);
-        throw rde2;
+        throw new RegionDestroyedException(toString(), getFullPath(), rde);
       }
     } finally {
       if (putAllOp_save == null) {
@@ -3960,12 +3958,10 @@ public class PartitionedRegion extends LocalRegion
         } else {
           // with transaction
           if (prce instanceof BucketNotFoundException) {
-            TransactionException ex = new TransactionDataRebalancedException(
+            throw new TransactionDataRebalancedException(
                 LocalizedStrings.PartitionedRegion_TRANSACTIONAL_DATA_MOVED_DUE_TO_REBALANCING
                     .toLocalizedString(key),
                 prce);
-            ex.initCause(prce);
-            throw ex;
           }
           Throwable cause = prce.getCause();
           if (cause instanceof PrimaryBucketException) {
@@ -3973,11 +3969,9 @@ public class PartitionedRegion extends LocalRegion
           } else if (cause instanceof TransactionDataRebalancedException) {
             throw (TransactionDataRebalancedException) cause;
           } else if (cause instanceof RegionDestroyedException) {
-            TransactionException ex = new TransactionDataRebalancedException(
+            throw new TransactionDataRebalancedException(
                 LocalizedStrings.PartitionedRegion_TRANSACTIONAL_DATA_MOVED_DUE_TO_REBALANCING
-                    .toLocalizedString(key));
-            ex.initCause(cause);
-            throw ex;
+                    .toLocalizedString(key), cause);
           } else {
             // Make transaction fail so client could retry
             // instead of returning null if ForceReattemptException is thrown.
@@ -5140,9 +5134,7 @@ public class PartitionedRegion extends LocalRegion
     } catch (RegionDestroyedException rde) {
       if (!rde.getRegionFullPath().equals(getFullPath())) {
         // Handle when a bucket is destroyed
-        RegionDestroyedException rde2 = new RegionDestroyedException(toString(), getFullPath());
-        rde2.initCause(rde);
-        throw rde2;
+        throw new RegionDestroyedException(toString(), getFullPath(), rde);
       }
     } finally {
       this.prStats.endDestroy(startTime);
@@ -5637,9 +5629,7 @@ public class PartitionedRegion extends LocalRegion
     } catch (RegionDestroyedException rde) {
       if (!rde.getRegionFullPath().equals(getFullPath())) {
         // Handle when a bucket is destroyed
-        RegionDestroyedException rde2 = new RegionDestroyedException(toString(), getFullPath());
-        rde2.initCause(rde);
-        throw rde2;
+        throw new RegionDestroyedException(toString(), getFullPath(), rde);
       }
     } finally {
       this.prStats.endInvalidate(startTime);
@@ -6364,9 +6354,7 @@ public class PartitionedRegion extends LocalRegion
         retryNode = getOrCreateNodeForBucketRead(bucketIdInt);
       } catch (RegionDestroyedException rde) {
         if (!rde.getRegionFullPath().equals(getFullPath())) {
-          RegionDestroyedException rde2 = new RegionDestroyedException(toString(), getFullPath());
-          rde2.initCause(rde);
-          throw rde2;
+          throw new RegionDestroyedException(toString(), getFullPath(), rde);
         }
       }
 
@@ -9451,11 +9439,9 @@ public class PartitionedRegion extends LocalRegion
         try {
           br.checkForPrimary();
         } catch (PrimaryBucketException pbe) {
-          RuntimeException re = new TransactionDataRebalancedException(
+          throw new TransactionDataRebalancedException(
               LocalizedStrings.PartitionedRegion_TRANSACTIONAL_DATA_MOVED_DUE_TO_REBALANCING
-                  .toLocalizedString());
-          re.initCause(pbe);
-          throw re;
+                  .toLocalizedString(), pbe);
         }
       }
     } catch (RegionDestroyedException ignore) {

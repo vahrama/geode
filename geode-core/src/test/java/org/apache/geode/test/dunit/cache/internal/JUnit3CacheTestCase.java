@@ -72,9 +72,9 @@ public abstract class JUnit3CacheTestCase extends JUnit3DistributedTestCase
    * Finish what {@code beginCacheXml} started. It does this be generating a cache.xml file and then
    * creating a real cache using that cache.xml.
    */
-  public final void finishCacheXml(final String name, final boolean useSchema,
+  public final void finishCacheXml(final File root, final String name, final boolean useSchema,
       final String xmlVersion) {
-    delegate.finishCacheXml(name, useSchema, xmlVersion);
+    delegate.finishCacheXml(root, name, useSchema, xmlVersion);
   }
 
   /**

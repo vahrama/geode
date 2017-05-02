@@ -1118,7 +1118,7 @@ public abstract class AbstractRegion implements Region, RegionAttributes, Attrib
 
   void checkEntryTimeoutAction(String mode, ExpirationAction ea) {
     if ((this.dataPolicy.withReplication() || this.dataPolicy.withPartitioning())
-        && ea == ExpirationAction.LOCAL_DESTROY || ea == ExpirationAction.LOCAL_INVALIDATE) {
+        && (ea == ExpirationAction.LOCAL_DESTROY || ea == ExpirationAction.LOCAL_INVALIDATE)) {
       throw new IllegalArgumentException(
           LocalizedStrings.AbstractRegion_0_ACTION_IS_INCOMPATIBLE_WITH_THIS_REGIONS_DATA_POLICY
               .toLocalizedString(mode));
