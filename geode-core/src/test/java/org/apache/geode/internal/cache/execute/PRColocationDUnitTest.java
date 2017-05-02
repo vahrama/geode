@@ -2587,55 +2587,54 @@ public class PRColocationDUnitTest extends JUnit4CacheTestCase {
     }
     return buf.toString();
   }
-}
 
+  static class DummyKeyBasedRoutingResolver implements PartitionResolver, DataSerializable {
+    Integer dummyID;
 
-class DummyKeyBasedRoutingResolver implements PartitionResolver, DataSerializable {
-  Integer dummyID;
+    public DummyKeyBasedRoutingResolver() {}
 
-  public DummyKeyBasedRoutingResolver() {}
+    public DummyKeyBasedRoutingResolver(int id) {
+      this.dummyID = new Integer(id);
+    }
 
-  public DummyKeyBasedRoutingResolver(int id) {
-    this.dummyID = new Integer(id);
-  }
+    public String getName() {
+      // TODO Auto-generated method stub
+      return null;
+    }
 
-  public String getName() {
-    // TODO Auto-generated method stub
-    return null;
-  }
+    public Serializable getRoutingObject(EntryOperation opDetails) {
+      return (Serializable) opDetails.getKey();
+    }
 
-  public Serializable getRoutingObject(EntryOperation opDetails) {
-    return (Serializable) opDetails.getKey();
-  }
+    public void close() {
+      // TODO Auto-generated method stub
+    }
 
-  public void close() {
-    // TODO Auto-generated method stub
-  }
+    public void fromData(DataInput in) throws IOException, ClassNotFoundException {
+      this.dummyID = DataSerializer.readInteger(in);
+    }
 
-  public void fromData(DataInput in) throws IOException, ClassNotFoundException {
-    this.dummyID = DataSerializer.readInteger(in);
-  }
+    public void toData(DataOutput out) throws IOException {
+      DataSerializer.writeInteger(this.dummyID, out);
+    }
 
-  public void toData(DataOutput out) throws IOException {
-    DataSerializer.writeInteger(this.dummyID, out);
-  }
+    @Override
+    public int hashCode() {
+      int i = this.dummyID.intValue();
+      return i;
+    }
 
-  @Override
-  public int hashCode() {
-    int i = this.dummyID.intValue();
-    return i;
-  }
+    @Override
+    public boolean equals(Object o) {
+      if (this == o)
+        return true;
 
-  @Override
-  public boolean equals(Object o) {
-    if (this == o)
-      return true;
+      if (!(o instanceof DummyKeyBasedRoutingResolver))
+        return false;
 
-    if (!(o instanceof DummyKeyBasedRoutingResolver))
-      return false;
+      DummyKeyBasedRoutingResolver otherDummyID = (DummyKeyBasedRoutingResolver) o;
+      return (otherDummyID.dummyID.equals(dummyID));
 
-    DummyKeyBasedRoutingResolver otherDummyID = (DummyKeyBasedRoutingResolver) o;
-    return (otherDummyID.dummyID.equals(dummyID));
-
+    }
   }
 }

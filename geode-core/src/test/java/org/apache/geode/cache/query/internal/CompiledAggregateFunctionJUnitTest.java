@@ -22,11 +22,12 @@ import java.util.List;
 
 import org.apache.geode.cache.query.internal.parse.OQLLexerTokenTypes;
 import org.jmock.Mockery;
+import org.jmock.lib.concurrent.Synchroniser;
+import org.jmock.lib.legacy.ClassImposteriser;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import org.apache.geode.cache.Cache;
 import org.apache.geode.cache.query.Aggregator;
 import org.apache.geode.cache.query.internal.aggregate.Avg;
 import org.apache.geode.cache.query.internal.aggregate.AvgBucketNode;
@@ -54,10 +55,15 @@ public class CompiledAggregateFunctionJUnitTest {
 
   @Before
   public void setUp() throws Exception {
-    context = new Mockery();
+    context = new Mockery() {
+      {
+        setImposteriser(ClassImposteriser.INSTANCE);
+        setThreadingPolicy(new Synchroniser());
+      }
+    };
     cache = context.mock(InternalCache.class);
     bucketList = new ArrayList();
-    bucketList.add(Integer.valueOf(1));
+    bucketList.add(1);
   }
 
   @Test
@@ -173,13 +179,13 @@ public class CompiledAggregateFunctionJUnitTest {
     Class maxMinClass = MaxMin.class;
     Field findMax = maxMinClass.getDeclaredField("findMax");
     findMax.setAccessible(true);
-    assertTrue(((Boolean) findMax.get(maxMin)).booleanValue());
+    assertTrue((Boolean) findMax.get(maxMin));
 
     CompiledAggregateFunction caf2 = new CompiledAggregateFunction(null, OQLLexerTokenTypes.MIN);
     ExecutionContext context2 = new ExecutionContext(null, cache);
     Aggregator agg1 = (Aggregator) caf2.evaluate(context1);
     assertTrue(agg1 instanceof MaxMin);
     MaxMin maxMin1 = (MaxMin) agg1;
-    assertFalse(((Boolean) findMax.get(maxMin1)).booleanValue());
+    assertFalse((Boolean) findMax.get(maxMin1));
   }
 }
