@@ -6106,7 +6106,9 @@ public class PartitionedRegion extends LocalRegion
     @Override
     public Object[] toArray(Object[] array) {
       List temp = new ArrayList(this.size());
-      temp.addAll(this);
+      for (Iterator iter = this.iterator(); iter.hasNext();) {
+        temp.add(iter.next());
+      }
       if (array == null) {
         return temp.toArray();
       } else {
