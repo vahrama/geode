@@ -8653,14 +8653,20 @@ public class LocalRegion extends AbstractRegion implements LoaderHelperFactory,
     @Override
     public Object[] toArray() {
       List temp = new ArrayList(this.size());
-      temp.addAll(this);
+      // do NOT use addAll or this results in stack overflow - must use iterator()
+      for (Iterator iter = iterator(); iter.hasNext();) {
+        temp.add(iter.next());
+      }
       return temp.toArray();
     }
 
     @Override
     public Object[] toArray(Object[] array) {
       List temp = new ArrayList(this.size());
-      temp.addAll(this);
+      // do NOT use addAll or this results in stack overflow - must use iterator()
+      for (Iterator iter = iterator(); iter.hasNext();) {
+        temp.add(iter.next());
+      }
       return temp.toArray(array);
     }
   }
