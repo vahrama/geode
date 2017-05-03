@@ -230,7 +230,7 @@ public class ClientCacheFactory {
       }
       {
         String propValue = this.dsProps.getProperty(LOCATORS);
-        if (isEmpty(propValue)) {
+        if (propValue != null && !propValue.isEmpty()) {
           throw new IllegalStateException(
               "On a client cache the locators property must be set to an empty string or not set. It was set to \""
                   + propValue + "\".");
