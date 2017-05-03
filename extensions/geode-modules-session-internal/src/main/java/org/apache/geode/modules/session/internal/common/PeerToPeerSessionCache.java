@@ -57,7 +57,7 @@ public class PeerToPeerSessionCache extends AbstractSessionCache {
     super();
     this.cache = cache;
 
-    /*
+    /**
      * Set some default properties for this cache if they haven't already been set
      */
     this.properties.put(CacheProperty.REGION_ATTRIBUTES_ID, DEFAULT_REGION_ATTRIBUTES_ID);
@@ -76,12 +76,11 @@ public class PeerToPeerSessionCache extends AbstractSessionCache {
     // Create or retrieve the region
     createOrRetrieveRegion();
 
-    /*
+    /**
      * If local cache is enabled, create the local region fronting the session region and set it as
      * the operating region; otherwise, use the session region directly as the operating region.
      */
-    boolean enableLocalCache =
-        Boolean.valueOf((String) properties.get(CacheProperty.ENABLE_LOCAL_CACHE));
+    boolean enableLocalCache = (Boolean) properties.get(CacheProperty.ENABLE_LOCAL_CACHE);
     operatingRegion = enableLocalCache ? createOrRetrieveLocalRegion() : this.sessionRegion;
 
     // Create or retrieve the statistics
