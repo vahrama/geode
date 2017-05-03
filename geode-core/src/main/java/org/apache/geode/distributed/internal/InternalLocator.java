@@ -94,7 +94,7 @@ import org.apache.geode.management.internal.configuration.messages.SharedConfigu
  * <p>
  * The startLocator() methods provide a way to start all three services in one call. Otherwise, the
  * services can be started independently {@code  locator = createLocator()
- * locator.startPeerLocation(); locator.startDistributeSystem();
+ * locator.startPeerLocation(); locator.startDistributeSystem();}
  * 
  * @since GemFire 4.0
  */
