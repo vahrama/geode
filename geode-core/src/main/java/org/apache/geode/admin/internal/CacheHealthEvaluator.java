@@ -14,8 +14,6 @@
  */
 package org.apache.geode.admin.internal;
 
-import static java.lang.Long.*;
-
 import java.util.List;
 
 import org.apache.logging.log4j.Logger;
@@ -254,7 +252,7 @@ class CacheHealthEvaluator extends AbstractHealthEvaluator implements CacheLifec
     if (eventQueueSize > threshold) {
       String s =
           LocalizedStrings.CacheHealthEvaluator_THE_SIZE_OF_THE_CACHE_EVENT_QUEUE_0_MS_EXCEEDS_THE_THRESHOLD_1_MS
-              .toLocalizedString(valueOf(eventQueueSize), valueOf(threshold));
+              .toLocalizedString(eventQueueSize, threshold);
       status.add(okayHealth(s));
     }
   }

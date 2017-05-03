@@ -106,7 +106,8 @@ public class JCALocalTransaction implements LocalTransaction {
       this.gfTxMgr.commit();
       this.tid = null;
     } catch (Exception e) {
-      throw new LocalTransactionException(e.toString(), e);
+      // TODO: consider wrapping the cause
+      throw new LocalTransactionException(e.toString());
     }
   }
 
