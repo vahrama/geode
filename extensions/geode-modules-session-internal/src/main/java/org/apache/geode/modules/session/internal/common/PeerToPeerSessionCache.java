@@ -80,7 +80,8 @@ public class PeerToPeerSessionCache extends AbstractSessionCache {
      * If local cache is enabled, create the local region fronting the session region and set it as
      * the operating region; otherwise, use the session region directly as the operating region.
      */
-    boolean enableLocalCache = Boolean.valueOf((String)properties.get(CacheProperty.ENABLE_LOCAL_CACHE));
+    boolean enableLocalCache =
+        Boolean.valueOf((String) properties.get(CacheProperty.ENABLE_LOCAL_CACHE));
     operatingRegion = enableLocalCache ? createOrRetrieveLocalRegion() : this.sessionRegion;
 
     // Create or retrieve the statistics

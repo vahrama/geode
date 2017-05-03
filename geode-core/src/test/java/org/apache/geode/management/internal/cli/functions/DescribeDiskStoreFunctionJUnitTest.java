@@ -696,7 +696,8 @@ public class DescribeDiskStoreFunctionJUnitTest {
 
   @Test
   public void testExecuteWithDiskDirsAndDiskSizesMismatch() throws Exception {
-    IgnoredException ignoredException = IgnoredException.addIgnoredException(IllegalStateException.class.getName());
+    IgnoredException ignoredException =
+        IgnoredException.addIgnoredException(IllegalStateException.class.getName());
     try {
       doTestExecuteWithDiskDirsAndDiskSizesMismatch();
     } finally {

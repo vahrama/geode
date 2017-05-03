@@ -50,7 +50,8 @@ public class CacheXmlTestCase extends JUnit4CacheTestCase {
   static boolean lonerDistributedSystem = true;
 
   @Rule
-  public DistributedRestoreSystemProperties restoreSystemProperties = new DistributedRestoreSystemProperties();
+  public DistributedRestoreSystemProperties restoreSystemProperties =
+      new DistributedRestoreSystemProperties();
 
   @Rule
   public SerializableTemporaryFolder temporaryFolder = new SerializableTemporaryFolder();
@@ -99,8 +100,8 @@ public class CacheXmlTestCase extends JUnit4CacheTestCase {
    */
   protected File findFile(String fileName) throws IOException {
     return copyResourceToDirectory(this.temporaryFolder.getRoot(), fileName);
-//    String path = TestUtil.getResourcePath(getClass(), fileName);
-//    return new File(path);
+    // String path = TestUtil.getResourcePath(getClass(), fileName);
+    // return new File(path);
   }
 
   protected File copyResourceToDirectory(File directory, String fileName) throws IOException {

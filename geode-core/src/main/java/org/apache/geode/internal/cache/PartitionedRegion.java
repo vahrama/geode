@@ -3971,7 +3971,8 @@ public class PartitionedRegion extends LocalRegion
           } else if (cause instanceof RegionDestroyedException) {
             throw new TransactionDataRebalancedException(
                 LocalizedStrings.PartitionedRegion_TRANSACTIONAL_DATA_MOVED_DUE_TO_REBALANCING
-                    .toLocalizedString(key), cause);
+                    .toLocalizedString(key),
+                cause);
           } else {
             // Make transaction fail so client could retry
             // instead of returning null if ForceReattemptException is thrown.
@@ -9441,7 +9442,8 @@ public class PartitionedRegion extends LocalRegion
         } catch (PrimaryBucketException pbe) {
           throw new TransactionDataRebalancedException(
               LocalizedStrings.PartitionedRegion_TRANSACTIONAL_DATA_MOVED_DUE_TO_REBALANCING
-                  .toLocalizedString(), pbe);
+                  .toLocalizedString(),
+              pbe);
         }
       }
     } catch (RegionDestroyedException ignore) {

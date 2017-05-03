@@ -344,8 +344,9 @@ public abstract class CacheXml66DUnitTest extends CacheXmlTestCase {
       RegionAttributes ra = factory.create();
       fail("Expected IllegalStateException to be thrown");
     } catch (IllegalStateException e) {
-      assertTrue(e.getMessage().contains(
-          LocalizedStrings.DiskStore_Deprecated_API_0_Cannot_Mix_With_DiskStore_1.toLocalizedString("setDiskDirs or setDiskWriteAttributes", getUniqueName())));
+      assertTrue(e.getMessage()
+          .contains(LocalizedStrings.DiskStore_Deprecated_API_0_Cannot_Mix_With_DiskStore_1
+              .toLocalizedString("setDiskDirs or setDiskWriteAttributes", getUniqueName())));
     }
 
     try {
@@ -2452,9 +2453,9 @@ public abstract class CacheXml66DUnitTest extends CacheXmlTestCase {
   }
 
   /**
-   * Tests the client subscription attributes ({@code eviction-policy}, {@code capacity}
-   * and {@code overflow-directory}) related to client subscription config in gemfire
-   * cache-server framework
+   * Tests the client subscription attributes ({@code eviction-policy}, {@code capacity} and
+   * {@code overflow-directory}) related to client subscription config in gemfire cache-server
+   * framework
    *
    * @since GemFire 5.7
    */
@@ -2804,8 +2805,7 @@ public abstract class CacheXml66DUnitTest extends CacheXmlTestCase {
 
   /**
    * Tests the bridge-server attributes ({@code maximum-message-count} and
-   * {@code message-time-to-live}) related to HA of client-queues in gemfire cache-server
-   * framework
+   * {@code message-time-to-live}) related to HA of client-queues in gemfire cache-server framework
    */
   @Test
   public void testBridgeAttributesRelatedToClientQueuesHA() throws Exception {
@@ -3185,7 +3185,8 @@ public abstract class CacheXml66DUnitTest extends CacheXmlTestCase {
     factory.setEvictionAttributes(ev);
     // RegionAttributes atts = factory.create();
     createRegion(name, factory.create());
-    finishCacheXml(this.temporaryFolder.getRoot(), getUniqueName(), getUseSchema(), getGemFireVersion());
+    finishCacheXml(this.temporaryFolder.getRoot(), getUniqueName(), getUseSchema(),
+        getGemFireVersion());
     Region r = getRootRegion().getSubregion(name);
 
     EvictionAttributes hlea = r.getAttributes().getEvictionAttributes();
@@ -3233,8 +3234,7 @@ public abstract class CacheXml66DUnitTest extends CacheXmlTestCase {
   }
 
   /**
-   * A {@code TransactionListener} that is {@code Declarable}, but not
-   * {@code Declarable2}.
+   * A {@code TransactionListener} that is {@code Declarable}, but not {@code Declarable2}.
    */
   public static class MySecondTestTransactionListener extends TestTransactionListener
       implements Declarable {
@@ -3352,8 +3352,8 @@ public abstract class CacheXml66DUnitTest extends CacheXmlTestCase {
   }
 
   /**
-   * Tests to make sure that we cannot create the same region multiple times in a
-   * {@code cache.xml} file.
+   * Tests to make sure that we cannot create the same region multiple times in a {@code cache.xml}
+   * file.
    */
   @Test
   public void testCreateSameRegionTwice() throws Exception {
@@ -3434,8 +3434,8 @@ public abstract class CacheXml66DUnitTest extends CacheXmlTestCase {
   }
 
   /**
-   * Generates XML from the given {@code CacheCreation} and returns an {@code InputStream}
-   * for reading that XML.
+   * Generates XML from the given {@code CacheCreation} and returns an {@code InputStream} for
+   * reading that XML.
    */
   public InputStream generate(CacheCreation creation) {
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -4213,8 +4213,7 @@ public abstract class CacheXml66DUnitTest extends CacheXmlTestCase {
   }
 
   /**
-   * Tests parsing an XML file that specifies a cache listener that is not a
-   * {@code CacheLoader}.
+   * Tests parsing an XML file that specifies a cache listener that is not a {@code CacheLoader}.
    */
   @Test
   public void testLoaderNotLoader() throws Exception {
@@ -4537,8 +4536,7 @@ public abstract class CacheXml66DUnitTest extends CacheXmlTestCase {
   }
 
   /**
-   * A {@code TransactionListener} that is {@code Declarable}, but not
-   * {@code Declarable2}.
+   * A {@code TransactionListener} that is {@code Declarable}, but not {@code Declarable2}.
    */
   public static class MyTestTransactionListener extends TestTransactionListener
       implements Declarable {

@@ -79,7 +79,8 @@ public class CacheXmlGeode10DUnitTest extends CacheXml81DUnitTest {
 
   @SuppressWarnings("rawtypes")
   @Test
-  public void testEnableOffHeapMemoryRootRegionWithoutOffHeapMemoryThrowsException() throws Exception {
+  public void testEnableOffHeapMemoryRootRegionWithoutOffHeapMemoryThrowsException()
+      throws Exception {
     final String regionName = getUniqueName();
 
     final CacheCreation cache = new CacheCreation();
@@ -109,7 +110,8 @@ public class CacheXmlGeode10DUnitTest extends CacheXml81DUnitTest {
 
   @SuppressWarnings({"rawtypes", "deprecation", "unchecked"})
   @Test
-  public void testEnableOffHeapMemorySubRegionWithoutOffHeapMemoryThrowsException() throws Exception {
+  public void testEnableOffHeapMemorySubRegionWithoutOffHeapMemoryThrowsException()
+      throws Exception {
     final String rootRegionName = getUniqueName();
     final String subRegionName = "subRegion";
 
