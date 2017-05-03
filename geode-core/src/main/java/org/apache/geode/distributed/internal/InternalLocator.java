@@ -1181,6 +1181,7 @@ public class InternalLocator extends Locator implements ConnectListener {
     @Override
     public SharedConfigurationStatusResponse call() throws InterruptedException {
       final InternalLocator locator = InternalLocator.this;
+      // TODO: this for-loop is probably not necessary as the if to break is always true
       for (int i = 0; i < MAX_RETRIES; i++) {
         if (locator.sharedConfig != null) {
           SharedConfigurationStatus status = locator.sharedConfig.getStatus();

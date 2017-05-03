@@ -14,6 +14,7 @@
  */
 package org.apache.geode.cache.client;
 
+import static org.apache.commons.lang.StringUtils.isEmpty;
 import static org.apache.geode.distributed.ConfigurationProperties.*;
 
 import java.util.Properties;
@@ -229,7 +230,7 @@ public class ClientCacheFactory {
       }
       {
         String propValue = this.dsProps.getProperty(LOCATORS);
-        if (propValue != null && !propValue.isEmpty()) {
+        if (isEmpty(propValue)) {
           throw new IllegalStateException(
               "On a client cache the locators property must be set to an empty string or not set. It was set to \""
                   + propValue + "\".");

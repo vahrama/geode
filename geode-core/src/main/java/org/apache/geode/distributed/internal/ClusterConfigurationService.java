@@ -446,9 +446,9 @@ public class ClusterConfigurationService {
         for (Entry<String, Configuration> stringConfigurationEntry : configRegion.entrySet()) {
           Configuration config = stringConfigurationEntry.getValue();
           for (String jar : config.getJarNames()) {
-            if (!getPathToJarOnThisLocator((String) stringConfigurationEntry.getKey(), jar).toFile()
+            if (!getPathToJarOnThisLocator(stringConfigurationEntry.getKey(), jar).toFile()
                 .exists()) {
-              downloadJarFromOtherLocators((String) stringConfigurationEntry.getKey(), jar);
+              downloadJarFromOtherLocators(stringConfigurationEntry.getKey(), jar);
             }
           }
         }

@@ -3210,9 +3210,7 @@ public class DistributedRegion extends LocalRegion implements CacheDistributionA
       // since we are playing the role
       return true;
     }
-    Set<InternalDistributedMember> members = this.distAdvisor.adviseGeneric();
-    for (InternalDistributedMember member1 : members) {
-      DistributedMember member = (DistributedMember) member1;
+    for (DistributedMember member : this.distAdvisor.adviseGeneric()) {
       Set<Role> roles = member.getRoles();
       if (roles.contains(role)) {
         return true;

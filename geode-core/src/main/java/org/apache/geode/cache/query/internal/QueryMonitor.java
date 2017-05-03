@@ -356,7 +356,7 @@ public class QueryMonitor implements Runnable {
 
     @Override
     public String toString() {
-      return new StringBuffer().append("QueryThreadTask[StartTime:").append(this.StartTime)
+      return new StringBuilder().append("QueryThreadTask[StartTime:").append(this.StartTime)
           .append(", queryThread:").append(this.queryThread).append(", threadId:")
           .append(this.queryThread.getId()).append(", query:").append(this.query.getQueryString())
           .append(", queryExecutionStatus:").append(this.queryExecutionStatus).append(']')

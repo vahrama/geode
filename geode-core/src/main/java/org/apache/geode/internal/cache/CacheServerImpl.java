@@ -83,7 +83,6 @@ import org.apache.geode.management.membership.ClientMembershipListener;
  */
 @SuppressWarnings("deprecation")
 public class CacheServerImpl extends AbstractCacheServer implements DistributionAdvisee {
-
   private static final Logger logger = LogService.getLogger();
 
   private static final int FORCE_LOAD_UPDATE_FREQUENCY = getInteger(
@@ -579,9 +578,10 @@ public class CacheServerImpl extends AbstractCacheServer implements Distribution
             "Could not create client subscription overflow directory: " + dir.getAbsolutePath());
       }
       File[] dirs = {dir};
+
       DiskStoreFactory dsf = cache.createDiskStoreFactory();
-      DiskStore bsi =
-          dsf.setAutoCompact(true).setDiskDirsAndSizes(dirs, new int[] {MAX_VALUE}).create("bsi");
+      dsf.setAutoCompact(true).setDiskDirsAndSizes(dirs, new int[] {MAX_VALUE}).create("bsi");
+
       factory.setDiskStoreName("bsi");
       // backward compatibility, it was sync
       factory.setDiskSynchronous(true);

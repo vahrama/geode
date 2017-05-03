@@ -451,7 +451,7 @@ public class PartitionedRegion extends LocalRegion
 
   private ScheduledExecutorService bucketSorter;
 
-  private ConcurrentMap<String, Integer[]> partitionsMap = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, Integer[]> partitionsMap = new ConcurrentHashMap<>();
 
   public ConcurrentMap<String, Integer[]> getPartitionsMap() {
     return this.partitionsMap;
@@ -6488,11 +6488,6 @@ public class PartitionedRegion extends LocalRegion
     return this.prStats;
   }
 
-  // fix for bug #42945 - PR.size() does not pay attention to transaction state
-  // @Override
-  // public int entryCount() {
-  // return entryCount(null);
-  // }
   /* non-transactional size calculation */
   @Override
   public int getRegionSize() {
@@ -6511,10 +6506,12 @@ public class PartitionedRegion extends LocalRegion
     }
   }
 
+  @Override
   public int entryCount(Set<Integer> buckets) {
     return entryCount(buckets, false);
   }
 
+  @Override
   public int entryCount(Set<Integer> buckets, boolean estimate) {
     Map<Integer, SizeEntry> bucketSizes = null;
     if (buckets != null) {
@@ -6554,8 +6551,6 @@ public class PartitionedRegion extends LocalRegion
       }
     }
     return size;
-
-
   }
 
   @Override
@@ -6651,8 +6646,6 @@ public class PartitionedRegion extends LocalRegion
       }
       return this.lockOwned;
     }
-
-
 
     private void basicLock() {
       if (enableAlerts) {
@@ -7050,7 +7043,6 @@ public class PartitionedRegion extends LocalRegion
                 + "be destroyed, unless all its children [%s] are destroyed",
             this.getFullPath(), childRegionList));
       }
-
     }
   }
 
@@ -7073,12 +7065,6 @@ public class PartitionedRegion extends LocalRegion
     missingColocatedRegionLogger = null;
   }
 
-  public void addMissingColocatedRegionLogger() {
-    if (missingColocatedRegionLogger == null) {
-      missingColocatedRegionLogger = new ColocationLogger(this);
-    }
-  }
-
   public void addMissingColocatedRegionLogger(String childName) {
     if (missingColocatedRegionLogger == null) {
       missingColocatedRegionLogger = new ColocationLogger(this);
@@ -7099,37 +7085,6 @@ public class PartitionedRegion extends LocalRegion
       return regionLogger.updateAndGetMissingChildRegions();
     }
     return Collections.emptyList();
-  }
-
-  /**
-   * Globally destroy the partitioned region by sending a message to a data store to do the destroy.
-   * 
-   * @return true if the region was destroyed successfully
-   */
-  private boolean destroyOnDataStore(Object aCallbackArgument) {
-    RegionAdvisor advisor = getRegionAdvisor();
-    Set<InternalDistributedMember> attempted = new HashSet<InternalDistributedMember>();
-
-    checkReadiness();
-    while (!isDestroyed()) {
-      Set<InternalDistributedMember> available = advisor.adviseInitializedDataStore();
-      available.removeAll(attempted);
-      if (available.isEmpty()) {
-        return false;
-      }
-      InternalDistributedMember next = available.iterator().next();
-      try {
-        DestroyRegionOnDataStoreMessage.send(next, this, aCallbackArgument);
-        return true;
-      } catch (ReplyException e) {
-        // try the next member
-        if (logger.isTraceEnabled()) {
-          logger.trace("Error destroying " + this + " on " + next, e);
-        }
-      }
-    }
-
-    return true;
   }
 
   public void destroyParallelGatewaySenderRegion(Operation op, boolean cacheWrite, boolean lock,
@@ -7555,8 +7510,7 @@ public class PartitionedRegion extends LocalRegion
    * the region type and invokes the relevant method.
    * 
    * @param destroyDiskRegion - true if the contents on disk should be destroyed
-   * @param event the RegionEvent <br>
-   *        OVERRIDES
+   * @param event the RegionEvent
    */
   @Override
   protected void postDestroyRegion(boolean destroyDiskRegion, RegionEventImpl event) {
@@ -7564,11 +7518,6 @@ public class PartitionedRegion extends LocalRegion
       logger.debug("PartitionedRegion#postDestroyRegion: {}", this);
     }
     Assert.assertTrue(this.isDestroyed || this.isClosed);
-    // bruce disabled the dumping of entries to keep the size of dunit log files
-    // from growing unreasonably large
-    // if (this.dataStore != null && logger.isDebugEnabled()) {
-    // this.dataStore.dumpEntries(false);
-    // }
 
     // Fixes 44551 - wait for persistent buckets to finish
     // recovering before sending the destroy region message
@@ -7703,13 +7652,13 @@ public class PartitionedRegion extends LocalRegion
    * @return true, if it is eligible for the region destroy
    */
   private boolean checkIfAlreadyDestroyedOrOldReference() {
-    boolean isAlreadyDestroyedOrOldReference = false;
     PartitionRegionConfig prConfig = null;
     try {
       prConfig = prRoot.get(this.getRegionIdentifier());
     } catch (CancelException ignore) {
       // ignore, metadata not accessible
     }
+    boolean isAlreadyDestroyedOrOldReference = false;
     if (null == prConfig) {
       isAlreadyDestroyedOrOldReference = true;
     } else {
@@ -7743,14 +7692,12 @@ public class PartitionedRegion extends LocalRegion
     }
   }
 
-
   @Override
   protected void generateLocalFilterRouting(InternalCacheEvent event) {
     if (event.getLocalFilterInfo() == null) {
       super.generateLocalFilterRouting(event);
     }
   }
-
 
   /**
    * Invoke the cache writer before a put is performed. Each BucketRegion delegates to the
@@ -7878,11 +7825,6 @@ public class PartitionedRegion extends LocalRegion
     }
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see org.apache.geode.internal.cache.LocalRegion#dumpBackingMap()
-   */
   @Override
   public void dumpBackingMap() {
     dumpAllBuckets(true);
@@ -7989,29 +7931,8 @@ public class PartitionedRegion extends LocalRegion
     return localPrimaryList;
   }
 
-  // /**
-  // * Gets the nodeList for a bucketId from B2N Region removing the nodes that
-  // * are not found in both membershipSet and prConfig meta-data region.
-  // *
-  // * @param bucketId
-  // * @return list of nodes for bucketId
-  // */
-  // ArrayList getNodeList(Integer bucketId)
-  // {
-  // ArrayList nList = null;
-  // VersionedArrayList val = (VersionedArrayList)this.getBucket2Node().get(
-  // bucketId);
-  // if (val != null) {
-  // nList = this.getRedundancyProvider().verifyBucketNodes(val.getListCopy());
-  // if (nList.size() == 0) {
-  // PartitionedRegionHelper.logForDataLoss(this, bucketId.intValue(),
-  // "getNodeList");
-  // }
-  // }
-  // return nList;
-  // }
-
   /** doesn't throw RegionDestroyedException, used by CacheDistributionAdvisor */
+  @Override
   public DistributionAdvisee getParentAdvisee() {
     return (DistributionAdvisee) basicGetParentRegion();
   }
@@ -8200,8 +8121,8 @@ public class PartitionedRegion extends LocalRegion
    * 
    * @since GemFire 5.1
    */
-  public static interface SetCollector {
-    public void receiveSet(Set theSet) throws IOException;
+  public interface SetCollector {
+    void receiveSet(Set theSet) throws IOException;
   }
 
   /**
@@ -8344,7 +8265,6 @@ public class PartitionedRegion extends LocalRegion
       throw new IndexNameConflictException(
           LocalizedStrings.IndexManager_INDEX_NAMED_0_ALREADY_EXISTS.toLocalizedString(indexName));
     }
-
 
     FutureTask<Index> oldIndexFutureTask = (FutureTask<Index>) ind;
     Index index = null;
@@ -8577,7 +8497,6 @@ public class PartitionedRegion extends LocalRegion
     return bucketIndexes;
   }
 
-
   private boolean sendCreateIndexesMessage(boolean remotelyOriginated,
       HashSet<IndexCreationData> indexDefinitions, Set<Index> indexes,
       HashMap<String, Exception> exceptionsMap) throws CacheException, ForceReattemptException {
@@ -8585,7 +8504,7 @@ public class PartitionedRegion extends LocalRegion
     if (!remotelyOriginated) {
       logger.info(
           LocalizedStrings.PartitionedRegion_CREATED_INDEX_LOCALLY_SENDING_INDEX_CREATION_MESSAGE_TO_ALL_MEMBERS_AND_WILL_BE_WAITING_FOR_RESPONSE_0);
-      IndexCreationMsg.IndexCreationResponse response = null;
+      IndexCreationMsg.IndexCreationResponse response;
       try {
         response = (IndexCreationMsg.IndexCreationResponse) IndexCreationMsg.send(null, this,
             indexDefinitions);
@@ -8603,15 +8522,14 @@ public class PartitionedRegion extends LocalRegion
             }
           }
         }
-      } catch (UnsupportedOperationException ex) {
+      } catch (UnsupportedOperationException ignore) {
         // if remote nodes are of older versions indexes will not be created
         // there, so remove index on this node as well.
         for (Index ind : indexes) {
           exceptionsMap.put(ind.getName(),
               new IndexCreationException(
                   LocalizedStrings.PartitionedRegion_INDEX_CREATION_FAILED_ROLLING_UPGRADE
-                      .toLocalizedString(),
-                  ex));
+                      .toLocalizedString()));
           this.indexes.remove(ind);
           indexManager.removeIndex(ind);
         }
@@ -8631,18 +8549,18 @@ public class PartitionedRegion extends LocalRegion
       return;
     }
 
-    RegionAdvisor advisor = (RegionAdvisor) (this.getCacheDistributionAdvisor());
-    final Set recipients = advisor.adviseDataStore();
+    RegionAdvisor advisor = (RegionAdvisor) getCacheDistributionAdvisor();
+    final Set<InternalDistributedMember> recipients = advisor.adviseDataStore();
     if (!recipients.contains(idM)) {
       logger.info(LocalizedMessage.create(
           LocalizedStrings.PartitionedRegion_NEWLY_ADDED_MEMBER_TO_THE_PR_IS_AN_ACCESSOR_AND_WILL_NOT_RECEIVE_INDEX_INFORMATION_0,
           idM));
       return;
     }
-    // this should add the member to a synchornized set and then sent this member
+    // this should add the member to a synchronized set and then sent this member
     // and index creation msg latter after its completed creating the partitioned region.
-    IndexCreationMsg.IndexCreationResponse response = null;
-    IndexCreationMsg.IndexCreationResult result = null;
+    IndexCreationMsg.IndexCreationResponse response;
+    IndexCreationMsg.IndexCreationResult result;
 
     if (this.indexes.isEmpty()) {
       return;
@@ -8670,7 +8588,7 @@ public class PartitionedRegion extends LocalRegion
         (IndexCreationMsg.IndexCreationResponse) IndexCreationMsg.send(idM, this, indexDefinitions);
 
     if (logger.isDebugEnabled()) {
-      logger.debug("Sending explictly index creation message to : {}", idM);
+      logger.debug("Sending explicitly index creation message to : {}", idM);
     }
 
     if (response != null) {
@@ -8682,8 +8600,8 @@ public class PartitionedRegion extends LocalRegion
           ((PartitionedIndex) ind)
               .setRemoteBucketesIndexed(remoteIndexBucketsMap.get(ind.getName()));
         }
-      } catch (ForceReattemptException ignor) {
-        logger.info(LocalizedStrings.PartitionedRegion_FORCEREATTEMPT_EXCEPTION___0, ignor);
+      } catch (ForceReattemptException e) {
+        logger.info(LocalizedStrings.PartitionedRegion_FORCEREATTEMPT_EXCEPTION___0, e);
       }
     }
   }
@@ -8709,10 +8627,9 @@ public class PartitionedRegion extends LocalRegion
         this));
 
     try {
-      Iterator bucketIterator = dataStore.getAllLocalBuckets().iterator();
-      while (bucketIterator.hasNext()) {
+      for (Object bucketEntryObject : dataStore.getAllLocalBuckets()) {
         LocalRegion bucket = null;
-        Map.Entry bucketEntry = (Map.Entry) bucketIterator.next();
+        Map.Entry bucketEntry = (Map.Entry) bucketEntryObject;
         bucket = (LocalRegion) bucketEntry.getValue();
         if (bucket != null) {
           bucket.waitForData();
@@ -8729,7 +8646,7 @@ public class PartitionedRegion extends LocalRegion
       if (logger.isDebugEnabled()) {
         logger.debug("Removed this many indexes on the buckets : {}", numBuckets);
       }
-      RemoveIndexesMessage.RemoveIndexesResponse response = null;
+      RemoveIndexesMessage.RemoveIndexesResponse response;
 
       if (!remotelyOriginated) {
         logger.info(LocalizedMessage.create(
@@ -8754,7 +8671,6 @@ public class PartitionedRegion extends LocalRegion
 
     } // outer try block
     finally {
-      // this.indexes = null;
       this.indexes.clear();
     }
   }
@@ -8765,7 +8681,7 @@ public class PartitionedRegion extends LocalRegion
    * @param ind Index to be removed.
    * 
    */
-  public int removeIndex(Index ind, boolean remotelyOrignated)
+  public int removeIndex(Index ind, boolean remotelyOriginated)
       throws CacheException, ForceReattemptException {
 
     int numBuckets = 0;
@@ -8792,9 +8708,9 @@ public class PartitionedRegion extends LocalRegion
           ind.getName(), ind);
     }
 
-    Index i = this.indexManager.getIndex(ind.getName());
-    if (i != null) {
-      this.indexManager.removeIndex(i);
+    Index index1 = this.indexManager.getIndex(ind.getName());
+    if (index1 != null) {
+      this.indexManager.removeIndex(index1);
     }
 
     // After removing from region wait for removing from index manager and
@@ -8834,9 +8750,9 @@ public class PartitionedRegion extends LocalRegion
       ((PartitionedIndex) prIndex).releaseIndexWriteLockForRemove();
     }
 
-    if (!remotelyOrignated) {
+    if (!remotelyOriginated) {
       // send remove index message.
-      RemoveIndexesMessage.RemoveIndexesResponse response = null;
+      RemoveIndexesMessage.RemoveIndexesResponse response;
       logger.info(LocalizedMessage.create(
           LocalizedStrings.PartitionedRegion_SENDING_REMOVEINDEX_MESSAGE_TO_ALL_THE_PARTICIPATING_PRS));
       response =
@@ -8862,22 +8778,18 @@ public class PartitionedRegion extends LocalRegion
    * @param indexName name of the index to be removed.
    */
   public int removeIndex(String indexName) throws CacheException, ForceReattemptException {
-    int numbuckets = 0;
-    // remotely orignated removeindex
-    // IndexTask indexTask = new IndexTask(indexName);
+    int numBuckets = 0;
+    // remotely originated removeindex
     Object ind = this.indexes.get(indexName);
 
     // Check if the returned value is instance of Index (this means the index is
     // not in create phase, its created successfully).
     if (ind instanceof Index) {
-      numbuckets = removeIndex((Index) this.indexes.get(indexName), true);
+      numBuckets = removeIndex((Index) this.indexes.get(indexName), true);
     }
-    return numbuckets;
+    return numBuckets;
   }
 
-  /*
-   * @OVERRIDES
-   */
   @Override
   public Object getValueInVM(Object key) throws EntryNotFoundException {
     if (this.dataStore == null) {
@@ -8930,8 +8842,7 @@ public class PartitionedRegion extends LocalRegion
    * @throws ForceReattemptException if the caller should reattempt this request
    */
   public List getBucketOwnersForValidation(int bucketId) throws ForceReattemptException {
-    // bucketid 1 => "vm A", false | "vm B", false | "vm C", true | "vm D",
-    // false
+    // bucketid 1 => "vm A", false | "vm B", false | "vm C", true | "vm D", false
     // bucketid 2 => List< Tuple(MemberId mem, Boolean isPrimary) >
 
     // remotely fetch each VM's bucket meta-data (versus looking at the bucket
@@ -9028,25 +8939,24 @@ public class PartitionedRegion extends LocalRegion
       }
     }
 
+    @Override
     public synchronized void memberJoined(InternalDistributedMember id) {
       // bug #44684 - this notification has been moved to a point AFTER the
       // other member has finished initializing its region
-      // if (PartitionedRegion.this.isInitialized() && hasListener()) {
-      // RegionEventImpl event = new RegionEventImpl(PartitionedRegion.this,
-      // Operation.REGION_CREATE, null, true, id);
-      // dispatchListenerEvent(EnumListenerEvent.AFTER_REMOTE_REGION_CREATE,
-      // event);
-      // }
+
       // required-roles functionality is not implemented for partitioned regions,
       // or it would be done here
     }
 
+    @Override
     public void quorumLost(Set<InternalDistributedMember> failures,
         List<InternalDistributedMember> remaining) {}
 
+    @Override
     public void memberSuspect(InternalDistributedMember id, InternalDistributedMember whoSuspected,
         String reason) {}
 
+    @Override
     public synchronized void memberDeparted(InternalDistributedMember id, boolean crashed) {
       if (PartitionedRegion.this.isInitialized() && hasListener()) {
         RegionEventImpl event =
@@ -9054,7 +8964,7 @@ public class PartitionedRegion extends LocalRegion
         if (crashed) {
           dispatchListenerEvent(EnumListenerEvent.AFTER_REMOTE_REGION_CRASH, event);
         } else {
-          // @todo darrel: it would be nice to know if what actual op was done
+          // TODO: it would be nice to know if what actual op was done
           // could be close, local destroy, or destroy (or load snap?)
           if (DestroyRegionOperation.isRegionDepartureNotificationOk()) {
             dispatchListenerEvent(EnumListenerEvent.AFTER_REMOTE_REGION_DEPARTURE, event);
@@ -9089,12 +8999,11 @@ public class PartitionedRegion extends LocalRegion
     return re;
   }
 
-
-
   @Override
   protected boolean usesDiskStore(RegionAttributes regionAttributes) {
-    if (regionAttributes.getPartitionAttributes().getLocalMaxMemory() <= 0)
+    if (regionAttributes.getPartitionAttributes().getLocalMaxMemory() <= 0) {
       return false; // see bug 42055
+    }
     return super.usesDiskStore(regionAttributes);
   }
 
@@ -9124,7 +9033,7 @@ public class PartitionedRegion extends LocalRegion
       logger.debug("PartitionedRegion {} handling {}", getFullPath(), event);
     }
     // Process event in remote data stores by sending message
-    Set allRemoteStores = getRegionAdvisor().adviseDataStore(true);
+    Set<InternalDistributedMember> allRemoteStores = getRegionAdvisor().adviseDataStore(true);
     if (logger.isDebugEnabled()) {
       logger.debug("PartitionedRegion {} sending InterestEvent message to:{}", getFullPath(),
           allRemoteStores);
@@ -9182,9 +9091,8 @@ public class PartitionedRegion extends LocalRegion
     ExpirationAttributes attr = super.setRegionTimeToLive(timeToLive);
     // Set to Bucket regions as well
     if (this.getDataStore() != null) { // not for accessors
-      Iterator iter = this.getDataStore().getAllLocalBuckets().iterator();
-      while (iter.hasNext()) {
-        Map.Entry entry = (Map.Entry) iter.next();
+      for (Object o : this.getDataStore().getAllLocalBuckets()) {
+        Map.Entry entry = (Map.Entry) o;
         Region bucketRegion = (Region) entry.getValue();
         bucketRegion.getAttributesMutator().setRegionTimeToLive(timeToLive);
       }
@@ -9207,9 +9115,8 @@ public class PartitionedRegion extends LocalRegion
     ExpirationAttributes attr = super.setRegionIdleTimeout(idleTimeout);
     // Set to Bucket regions as well
     if (this.getDataStore() != null) { // not for accessors
-      Iterator iter = this.getDataStore().getAllLocalBuckets().iterator();
-      while (iter.hasNext()) {
-        Map.Entry entry = (Map.Entry) iter.next();
+      for (Object o : this.getDataStore().getAllLocalBuckets()) {
+        Map.Entry entry = (Map.Entry) o;
         Region bucketRegion = (Region) entry.getValue();
         bucketRegion.getAttributesMutator().setRegionIdleTimeout(idleTimeout);
       }
@@ -9233,9 +9140,8 @@ public class PartitionedRegion extends LocalRegion
     ExpirationAttributes attr = super.setEntryTimeToLive(timeToLive);
     // Set to Bucket regions as well
     if (this.getDataStore() != null) { // not for accessors
-      Iterator iter = this.getDataStore().getAllLocalBuckets().iterator();
-      while (iter.hasNext()) {
-        Map.Entry entry = (Map.Entry) iter.next();
+      for (Object o : this.getDataStore().getAllLocalBuckets()) {
+        Map.Entry entry = (Map.Entry) o;
         Region bucketRegion = (Region) entry.getValue();
         bucketRegion.getAttributesMutator().setEntryTimeToLive(timeToLive);
       }
@@ -9264,9 +9170,8 @@ public class PartitionedRegion extends LocalRegion
     CustomExpiry expiry = super.setCustomEntryTimeToLive(custom);
     // Set to Bucket regions as well
     if (this.getDataStore() != null) { // not for accessors
-      Iterator iter = this.getDataStore().getAllLocalBuckets().iterator();
-      while (iter.hasNext()) {
-        Map.Entry entry = (Map.Entry) iter.next();
+      for (Object o : this.getDataStore().getAllLocalBuckets()) {
+        Map.Entry entry = (Map.Entry) o;
         Region bucketRegion = (Region) entry.getValue();
         bucketRegion.getAttributesMutator().setCustomEntryTimeToLive(custom);
       }
@@ -9291,9 +9196,8 @@ public class PartitionedRegion extends LocalRegion
     ExpirationAttributes attr = super.setEntryIdleTimeout(idleTimeout);
     // Set to Bucket regions as well
     if (this.getDataStore() != null) { // not for accessors
-      Iterator iter = this.getDataStore().getAllLocalBuckets().iterator();
-      while (iter.hasNext()) {
-        Map.Entry entry = (Map.Entry) iter.next();
+      for (Object o : this.getDataStore().getAllLocalBuckets()) {
+        Map.Entry entry = (Map.Entry) o;
         Region bucketRegion = (Region) entry.getValue();
         bucketRegion.getAttributesMutator().setEntryIdleTimeout(idleTimeout);
       }
@@ -9313,9 +9217,8 @@ public class PartitionedRegion extends LocalRegion
     CustomExpiry expiry = super.setCustomEntryIdleTimeout(custom);
     // Set to Bucket regions as well
     if (this.getDataStore() != null) { // not for accessors
-      Iterator iter = this.getDataStore().getAllLocalBuckets().iterator();
-      while (iter.hasNext()) {
-        Map.Entry entry = (Map.Entry) iter.next();
+      for (Object o : this.getDataStore().getAllLocalBuckets()) {
+        Map.Entry entry = (Map.Entry) o;
         Region bucketRegion = (Region) entry.getValue();
         bucketRegion.getAttributesMutator().setCustomEntryIdleTimeout(custom);
       }
@@ -9376,7 +9279,7 @@ public class PartitionedRegion extends LocalRegion
             HeapEvictor.BUCKET_SORTING_INTERVAL);
       }
     }
-    List<BucketRegion> bucketList = new ArrayList<BucketRegion>();
+    List<BucketRegion> bucketList = new ArrayList<>();
     if (!bucketSortedOnce.get()) {
       while (bucketSortedOnce.get() == false);
     }
@@ -9385,6 +9288,7 @@ public class PartitionedRegion extends LocalRegion
   }
 
   class BucketSorterThread implements Runnable {
+    @Override
     public void run() {
       try {
         List<BucketRegion> bucketList = new ArrayList<BucketRegion>();
@@ -9464,7 +9368,6 @@ public class PartitionedRegion extends LocalRegion
     BucketRegion br = null;
     final Object entryKey = keyInfo.getKey();
     try {
-      int count = 0;
       final int retryAttempts = calcRetry();
       // TODO provide appropriate Operation and arg
       int bucketId = keyInfo.getBucketId();
@@ -9473,6 +9376,7 @@ public class PartitionedRegion extends LocalRegion
             keyInfo.getCallbackArg());
         keyInfo.setBucketId(bucketId);
       }
+      int count = 0;
       while (count <= retryAttempts) {
         try {
           PartitionedRegionDataStore ds = getDataStore();
@@ -9516,16 +9420,16 @@ public class PartitionedRegion extends LocalRegion
   }
 
   @Override
-  public DistributedMember getOwnerForKey(KeyInfo keyInfo) {
-    if (keyInfo == null) {
+  public DistributedMember getOwnerForKey(KeyInfo key) {
+    if (key == null) {
       return super.getOwnerForKey(null);
     }
     // TODO provide appropriate Operation and arg
-    int bucketId = keyInfo.getBucketId();
+    int bucketId = key.getBucketId();
     if (bucketId == KeyInfo.UNKNOWN_BUCKET) {
-      bucketId = PartitionedRegionHelper.getHashKey(this, null, keyInfo.getKey(),
-          keyInfo.getValue(), keyInfo.getCallbackArg());
-      keyInfo.setBucketId(bucketId);
+      bucketId = PartitionedRegionHelper.getHashKey(this, null, key.getKey(), key.getValue(),
+          key.getCallbackArg());
+      key.setBucketId(bucketId);
     }
     return createBucket(bucketId, 0, null);
   }
@@ -9573,8 +9477,6 @@ public class PartitionedRegion extends LocalRegion
     public String toString() {
       return "SizeEntry(" + size + ", primary=" + isPrimary + ")";
     }
-
-
   }
 
   /**
@@ -9594,8 +9496,6 @@ public class PartitionedRegion extends LocalRegion
     private String indexedExpression;
 
     private String fromClause;
-
-    // public List p_list;
 
     public String imports;
 
@@ -9640,10 +9540,10 @@ public class PartitionedRegion extends LocalRegion
     /**
      * This starts creating the index.
      */
+    @Override
     public PartitionedIndex call() throws IndexCreationException, IndexNameConflictException,
         IndexExistsException, ForceReattemptException {
-      // List list = p_list;
-      PartitionedIndex prIndex = null;
+      PartitionedIndex prIndex;
 
       if (dataStore != null) {
         prIndex = createIndexOnPRBuckets();
@@ -9669,7 +9569,6 @@ public class PartitionedRegion extends LocalRegion
      */
     private PartitionedIndex createIndexOnPRBuckets()
         throws IndexNameConflictException, IndexExistsException, IndexCreationException {
-      // List list = p_list;
 
       Set localBuckets = getDataStore().getAllLocalBuckets();
       Iterator it = localBuckets.iterator();
@@ -9678,18 +9577,15 @@ public class PartitionedRegion extends LocalRegion
         compiler.compileImports(imports);
       }
 
-      // list = compiler.compileFromClause(fromClause);
-
+      // imports can be null
       PartitionedIndex parIndex = new PartitionedIndex(indexType, indexName, PartitionedRegion.this,
-          indexedExpression, fromClause, imports); // imports can be null
-      String modifiedFromClause;
+          indexedExpression, fromClause, imports);
+
       // In cases where we have no data yet (creation from cache xml), it would leave the populated
-      // flag to false
-      // Not really an issue as a put will trigger bucket index creation which should set this the
-      // flag to true
-      // However if the region is empty, we should set this flag to true so it will be reported as
-      // used even though
-      // there is no data in the region
+      // flag to false Not really an issue as a put will trigger bucket index creation which should
+      // set this the flag to true However if the region is empty, we should set this flag to true
+      // so it will be reported as used even though there is no data in the region
+
       if (!it.hasNext()) {
         parIndex.setPopulated(true);
       }
@@ -9720,7 +9616,6 @@ public class PartitionedRegion extends LocalRegion
       } // End of bucket list
       return parIndex;
     }
-
   }
 
   public List<FixedPartitionAttributesImpl> getFixedPartitionAttributesImpl() {
@@ -9770,17 +9665,16 @@ public class PartitionedRegion extends LocalRegion
    * This data of the partitions (FixedPartitionAttributes with starting bucket id for the Fixed
    * Partitioned Region) is stored in metadata for each member.
    */
-
   private void calculateStartingBucketIDs(PartitionRegionConfig prConfig) {
     if (BEFORE_CALCULATE_STARTING_BUCKET_FLAG) {
       PartitionedRegionObserver pro = PartitionedRegionObserverHolder.getInstance();
       pro.beforeCalculatingStartingBucketId();
     }
-    int startingBucketID = 0;
     List<FixedPartitionAttributesImpl> fpaList = getFixedPartitionAttributesImpl();
 
     if (this.getColocatedWith() == null) {
       Set<FixedPartitionAttributesImpl> elderFPAs = prConfig.getElderFPAs();
+      int startingBucketID = 0;
       if (elderFPAs != null && !elderFPAs.isEmpty()) {
         int largestStartBucId = -1;
         for (FixedPartitionAttributesImpl fpa : elderFPAs) {

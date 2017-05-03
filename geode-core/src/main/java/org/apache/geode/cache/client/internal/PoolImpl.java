@@ -14,6 +14,8 @@
  */
 package org.apache.geode.cache.client.internal;
 
+import static org.apache.commons.lang.StringUtils.isEmpty;
+
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -238,9 +240,8 @@ public class PoolImpl implements InternalPool {
       statFactory = ds;
     }
     this.stats = this.startDisabled ? null
-        : new PoolStats(statFactory,
-            getName() + "->" + (serverGroup == null || serverGroup.isEmpty() ? "[any servers]"
-                : "[" + getServerGroup() + "]"));
+        : new PoolStats(statFactory, getName() + "->"
+            + (isEmpty(serverGroup) ? "[any servers]" : "[" + getServerGroup() + "]"));
 
     source = getSourceImpl(((PoolFactoryImpl.PoolAttributes) attributes).locatorCallback);
     endpointManager = new EndpointManagerImpl(name, ds, this.cancelCriterion, this.stats);
@@ -1310,7 +1311,7 @@ public class PoolImpl implements InternalPool {
       } catch (VirtualMachineError e) {
         SystemFailure.initiateFailure(e);
         throw e;
-      } catch (CancelException e) {
+      } catch (CancelException ignore) {
         if (logger.isDebugEnabled()) {
           logger.debug("Pool task <{}> cancelled", this);
         }
@@ -1428,14 +1429,7 @@ public class PoolImpl implements InternalPool {
         return cacheCriterion.generateCancelledException(e);
       }
     } else {
-      if (cacheCriterion == null) {
-        cacheCriterion = cache.getCancelCriterion();
-      } else if (cacheCriterion != cache.getCancelCriterion()) {
-        /*
-         * If the cache instance has somehow changed, we need to get a reference to the new
-         * criterion. This is pretty unlikely because the cache closes all the pools when it shuts
-         * down, but I wanted to be safe.
-         */
+      if (cacheCriterion == null || cacheCriterion != cache.getCancelCriterion()) {
         cacheCriterion = cache.getCancelCriterion();
       }
       return cacheCriterion.generateCancelledException(e);

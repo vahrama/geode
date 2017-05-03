@@ -763,7 +763,7 @@ public class PartitionAttributesImpl implements PartitionAttributes, Cloneable, 
     long availableOffHeapMemoryInMB = 0;
     if (testAvailableOffHeapMemory != null) {
       availableOffHeapMemoryInMB =
-          OffHeapStorage.parseOffHeapMemorySize(testAvailableOffHeapMemory) / (1024 << 10);
+          OffHeapStorage.parseOffHeapMemorySize(testAvailableOffHeapMemory) / (1024 * 1024);
     } else if (InternalDistributedSystem.getAnyInstance() == null) {
       this.localMaxMemoryExists = false;
       // fix 52033: return non-negative, non-zero temporary placeholder for offHeapLocalMaxMemory

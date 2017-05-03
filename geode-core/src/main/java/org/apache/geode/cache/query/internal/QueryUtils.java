@@ -276,7 +276,10 @@ public class QueryUtils {
       rs = new ResultsBag(large, null);
     }
 
-    rs.addAll(small);
+    for (Iterator itr = small.iterator(); itr.hasNext();) {
+      Object element = itr.next();
+      rs.add(element);
+    }
     return rs;
   }
 
@@ -680,7 +683,8 @@ public class QueryUtils {
         StructTypeImpl elementType =
             (StructTypeImpl) resultSet.getCollectionType().getElementType();
 
-        // TODO: Optimize the LinkedStructSet implementation so that
+        // TODO: Optimize the LinkedStructSet implementation so that Object[] can be added rather
+        // than Struct
 
         Object[] values = new Object[len];
         int j = 0;
@@ -870,7 +874,7 @@ public class QueryUtils {
     }
 
     // Do not use PrimaryKey Index
-    IndexData rhsIndxData = QueryUtils.getAvailableIndexIfAny(rhs, context, false /*  */);
+    IndexData rhsIndxData = QueryUtils.getAvailableIndexIfAny(rhs, context, false);
     if (rhsIndxData == null) {
       // release the lock held on lhsIndex as it will not be used
       Index index = lhsIndxData.getIndex();
@@ -1083,8 +1087,8 @@ public class QueryUtils {
     int indexFieldsSize2 = resultType2 instanceof StructType
         ? ((StructTypeImpl) resultType2).getFieldNames().length : 1;
     /*
-     * even if th complete expansion is needed pass the flag of complete expansion as false. Thus
-     * for LHS & RHS we will get the expnasionList for that individual group.
+     * even if the complete expansion is needed pass the flag of complete expansion as false. Thus
+     * for LHS & RHS we will get the expansionList for that individual group.
      */
 
     // NOTE: use false for completeExpansion irrespective of actual value
@@ -1360,14 +1364,10 @@ public class QueryUtils {
       // Add this reconstructed value to the iter operand if any
       CompiledValue finalVal = reconstructedVal;
       if (iterOperands != null) {
-        // The type of CompiledJunction has to be AND junction as this
-        // function gets invoked only for AND . Also it is OK if we have
-        // iterOperands which
-        // itself is a CompiledJunction. We can have a tree of CompiledJunction
-        // with its
-        // operands being a CompiledComparison & a CompiledJunction. We can live
-        // without
-        // creating a flat structure
+        // The type of CompiledJunction has to be AND junction as this function gets invoked only
+        // for AND . Also it is OK if we have iterOperands which itself is a CompiledJunction. We
+        // can have a tree of CompiledJunction with its operands being a CompiledComparison & a
+        // CompiledJunction. We can live without creating a flat structure
         finalVal = new CompiledJunction(new CompiledValue[] {iterOperands, reconstructedVal},
             OQLLexerTokenTypes.LITERAL_and);
       }
@@ -1391,8 +1391,6 @@ public class QueryUtils {
    *        given value, we require a 2 dimensional Object array. The cartesian of the two rows will
    *        give us the set of tuples satisfying the join criteria. Each element of the row of
    *        Object Array may be either an Object or a Struct object.
-   * 
-   * 
    * @param indxInfo An array of IndexInfo objects of size 2 , representing the range indexes of the
    *        two operands. The other Index maps to the 0th Object array row of the List object ( data
    *        ) & so on.
@@ -1406,7 +1404,7 @@ public class QueryUtils {
    *         composite condition in an OR junction. The returned Result is expanded either to the
    *         CompositeGroupJunction level or to the top level as the case may be
    */
-  static SelectResults getconditionedRelationshipIndexResultsExpandedToTopOrCGJLevel(List data,
+  static SelectResults getConditionedRelationshipIndexResultsExpandedToTopOrCGJLevel(List data,
       IndexInfo[] indxInfo, ExecutionContext context, boolean completeExpansionNeeded,
       CompiledValue iterOperands, RuntimeIterator[] indpdntItrs) throws FunctionDomainException,
       TypeMismatchException, NameResolutionException, QueryInvocationTargetException {
@@ -1445,9 +1443,7 @@ public class QueryUtils {
       int size = totalFinalList.size();
       for (int i = 0; i < size; ++i) {
         RuntimeIterator currItr = (RuntimeIterator) totalFinalList.get(i);
-        // If the runtimeIterators of scope not present in CheckSet add it
-        // to
-        // the expansion list
+        // If the runtimeIterators of scope not present in CheckSet add it to the expansion list
         if (!expnItrsAlreadyAccounted.contains(currItr)) {
           totalExpList.add(currItr);
         }
@@ -1486,25 +1482,14 @@ public class QueryUtils {
         observer.beforeMergeJoinOfDoubleIndexResults(ich1.indxInfo._index, ich2.indxInfo._index,
             data);
         while (dataItr.hasNext()) {
-          // TODO: Change the code in range Index so that while collecting
-          // data
-          // instead of creating
-          // two dimensional object array , we create one dimensional Object
-          // array
-          // of size 2, & each elemnt
-          // stores an Object array
+          // TODO: Change the code in range Index so that while collecting data instead of creating
+          // two dimensional object array , we create one dimensional Object array of size 2, & each
+          // elemnt stores an Object array
           Object[][] values = (Object[][]) dataItr.next();
-          // Before doing the cartesian of the Results , we need to clear
-          // the
-          // CheckSet of IndexCutDownExpansionHelper. This is needed because for
-          // a
-          // new key , the row
-          // of sets needs to be considered fresh as presence of old row in
-          // checkset
-          // may cause us to wrongly
-          // skip the similar row of a set , even when the row in its entirety
-          // is
-          // unique ( made by
+          // Before doing the cartesian of the Results , we need to clear the CheckSet of
+          // IndexCutDownExpansionHelper. This is needed because for a new key , the row of sets
+          // needs to be considered fresh as presence of old row in checkset may cause us to wrongly
+          // skip the similar row of a set , even when the row in its entirety is unique ( made by
           // different data in the other set)
           mergeAndExpandCutDownRelationshipIndexResults(values, returnSet, mappings,
               expansionListIterator, totalFinalList, context, totalCheckList, iterOperands, icdeh,

@@ -10145,7 +10145,9 @@ public class LocalRegion extends AbstractRegion implements LoaderHelperFactory,
     }
 
     Set successfulKeys = new HashSet(successfulPuts.size());
-    successfulKeys.addAll(successfulPuts.getKeys());
+    for (Object key : successfulPuts.getKeys()) {
+      successfulKeys.add(key);
+    }
 
     for (Iterator it = putAllOp.eventIterator(); it.hasNext();) {
       @Unretained
@@ -10177,7 +10179,9 @@ public class LocalRegion extends AbstractRegion implements LoaderHelperFactory,
     }
 
     Set successfulKeys = new HashSet(successfulOps.size());
-    successfulKeys.addAll(successfulOps.getKeys());
+    for (Object key : successfulOps.getKeys()) {
+      successfulKeys.add(key);
+    }
 
     for (Iterator it = removeAllOp.eventIterator(); it.hasNext();) {
       @Unretained

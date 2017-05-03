@@ -480,9 +480,7 @@ public class HashIndex extends AbstractIndex {
     if (orderByClause != null && orderByClause) {
       orderByAttrs = (List) context.cacheGet(CompiledValue.ORDERBY_ATTRIB);
       CompiledSortCriterion csc = (CompiledSortCriterion) orderByAttrs.get(0);
-      boolean asc = !csc.getCriterion();
       applyOrderBy = true;
-      boolean multiColOrderBy = orderByAttrs.size() > 1;
     }
     evaluate(key, operator, results, iterOps, runtimeItr, context, keysToRemove, projAttrib,
         intermediateResults, isIntersection, limit, applyOrderBy, orderByAttrs);

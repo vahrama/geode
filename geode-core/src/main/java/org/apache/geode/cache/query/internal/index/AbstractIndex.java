@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.Logger;
 
 import org.apache.geode.cache.Region;
@@ -148,7 +149,7 @@ public abstract class AbstractIndex implements IndexProtocol {
     this.originalIndexedExpression = originalIndexedExpression;
     this.originalFromClause = originalFromClause;
     this.canonicalizedDefinitions = defintions;
-    if (projectionAttributes == null || projectionAttributes.isEmpty()) {
+    if (StringUtils.isEmpty(projectionAttributes)) {
       projectionAttributes = "*";
     }
     this.projectionAttributes = projectionAttributes;
@@ -585,7 +586,6 @@ public abstract class AbstractIndex implements IndexProtocol {
         SelectResults selectResults = (SelectResults) results;
         StructImpl structImpl = new StructImpl(
             (StructTypeImpl) selectResults.getCollectionType().getElementType(), values);
-        // lss.add(structImpl);
         selectResults.add(structImpl);
       }
 
@@ -932,7 +932,7 @@ public abstract class AbstractIndex implements IndexProtocol {
 
     private Map dependencyGraph = null;
 
-    /*
+    /**
      * The boolean if true indicates that the 0th iterator is on entries . If the 0th iterator is on
      * collection of Region.Entry objects, then the RegionEntry object used in Index data objects is
      * obtained directly from its corresponding Region.Entry object. However if the 0th iterator is
@@ -1139,7 +1139,7 @@ public abstract class AbstractIndex implements IndexProtocol {
      * the additional projection attribute. If the boolean isFirstItrOnEntry is true & additional
      * projection attribute is null, then the 0th iterator itself will evaluate to Region.Entry
      * Object.
-     * 
+     * <p>
      * The 2nd element of Object Array contains the Struct object ( tuple) created. If the boolean
      * isFirstItrOnEntry is false, then the first attribute of the Struct object is obtained by
      * evaluating the additional projection attribute.
@@ -1179,8 +1179,9 @@ public abstract class AbstractIndex implements IndexProtocol {
           RuntimeIterator iter = (RuntimeIterator) currrentRuntimeIters.get(i);
           tuple[i] = iter.evaluate(this.initContext);
         }
-        if (!this.isFirstItrOnEntry)
+        if (!this.isFirstItrOnEntry) {
           tuple[0] = this.additionalProj.evaluate(this.initContext);
+        }
         Support.Assert(this.indexResultSetType instanceof StructTypeImpl,
             "The Index ResultType should have been an instance of StructTypeImpl rather than ObjectTypeImpl. The indxeResultType is "
                 + this.indexResultSetType);
@@ -1253,8 +1254,8 @@ public abstract class AbstractIndex implements IndexProtocol {
     }
 
     /**
-     * // The struct type calculation is modified if the // 0th iterator is modified to make it
-     * dependent on Entry
+     * The struct type calculation is modified if the 0th iterator is modified to make it dependent
+     * on Entry
      */
     private ObjectType createIndexResultSetType() {
       List currentIterators = this.initContext.getCurrentIterators();

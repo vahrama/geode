@@ -14,8 +14,6 @@
  */
 package org.apache.geode.cache.query.internal;
 
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -37,12 +35,9 @@ public class QueryExecutionContext extends ExecutionContext {
 
   private int nextFieldNum = 0;
 
-  private Query query;
-
-  private IntOpenHashSet successfulBuckets;
+  private final Query query;
 
   private boolean cqQueryContext = false;
-
 
   private List bucketList;
 
@@ -67,11 +62,11 @@ public class QueryExecutionContext extends ExecutionContext {
   /**
    * List of query index names that the user has hinted on using
    */
-
-  private List<String> hints = null;
+  private ArrayList hints = null;
 
   public QueryExecutionContext(Object[] bindArguments, InternalCache cache) {
     super(bindArguments, cache);
+    this.query = null;
   }
 
   public QueryExecutionContext(Object[] bindArguments, InternalCache cache, Query query) {
@@ -164,7 +159,6 @@ public class QueryExecutionContext extends ExecutionContext {
   @Override
   public void setBucketList(List list) {
     this.bucketList = list;
-    this.successfulBuckets = new IntOpenHashSet();
   }
 
   @Override
@@ -178,7 +172,7 @@ public class QueryExecutionContext extends ExecutionContext {
   @Override
   public PdxString getSavedPdxString(int index) {
     if (bindArgumentToPdxStringMap == null) {
-      bindArgumentToPdxStringMap = new HashMap<Integer, PdxString>();
+      bindArgumentToPdxStringMap = new HashMap<>();
     }
 
     PdxString pdxString = bindArgumentToPdxStringMap.get(index - 1);
@@ -198,7 +192,7 @@ public class QueryExecutionContext extends ExecutionContext {
   }
 
   private void setHints(ArrayList<String> hints) {
-    this.hints = new ArrayList();
+    this.hints = new ArrayList<>();
     this.hints.addAll(hints);
   }
 
@@ -207,7 +201,7 @@ public class QueryExecutionContext extends ExecutionContext {
    * @return true if the index name was hinted by the user
    */
   public boolean isHinted(String indexName) {
-    return hints != null ? hints.contains(indexName) : false;
+    return hints != null && hints.contains(indexName);
   }
 
   /**

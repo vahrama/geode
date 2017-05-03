@@ -14,6 +14,8 @@
  */
 package org.apache.geode.modules.session.catalina;
 
+import static org.apache.geode.internal.util.IOUtils.close;
+
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.BufferedInputStream;
@@ -714,9 +716,9 @@ public abstract class DeltaSessionManager extends ManagerBase
       throw e;
     } finally {
       if (error) {
-        closeQuietly(oos);
-        closeQuietly(bos);
-        closeQuietly(fos);
+        close(oos);
+        close(bos);
+        close(fos);
       }
     }
 
@@ -747,12 +749,12 @@ public abstract class DeltaSessionManager extends ManagerBase
       }
     } catch (IOException e) {
       getLogger().error("Exception unloading sessions", e);
-      closeQuietly(oos);
+      close(oos);
       throw e;
     }
 
     // Flush and close the output stream
-    closeQuietly(oos);
+    close(oos);
 
     // Locally destroy the sessions we just wrote
     if (getSessionCache().isClientServer()) {
@@ -923,22 +925,12 @@ public abstract class DeltaSessionManager extends ManagerBase
   }
 
   public Context getTheContext() {
-    if (Context.class.isInstance(getContainer())) {
+    if (getContainer() instanceof Context) {
       return (Context) getContainer();
     } else {
       getLogger().error("Unable to unload sessions - container is of type "
           + getContainer().getClass().getName() + " instead of StandardContext");
       return null;
-    }
-  }
-
-  private static void closeQuietly(Closeable closeable) {
-    if (closeable == null) {
-      return;
-    }
-    try {
-      closeable.close();
-    } catch (IOException ignore) {
     }
   }
 }

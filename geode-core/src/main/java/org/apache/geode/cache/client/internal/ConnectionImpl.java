@@ -160,9 +160,7 @@ public class ConnectionImpl implements Connection {
     commBuffer = null;
     try {
       theSocket.close();
-    } catch (IOException ignore) {
-      // ignore
-    } catch (RuntimeException ignore) {
+    } catch (IOException | RuntimeException ignore) {
       // ignore
     }
   }

@@ -455,15 +455,11 @@ public class CompactRangeIndex extends AbstractIndex {
 
     Boolean orderByClause = (Boolean) context.cacheGet(CompiledValue.CAN_APPLY_ORDER_BY_AT_INDEX);
     boolean applyOrderBy = false;
-    boolean asc = true;
     List orderByAttrs = null;
-    boolean multiColOrderBy = false;
     if (orderByClause != null && orderByClause) {
       orderByAttrs = (List) context.cacheGet(CompiledValue.ORDERBY_ATTRIB);
       CompiledSortCriterion csc = (CompiledSortCriterion) orderByAttrs.get(0);
-      asc = !csc.getCriterion();
       applyOrderBy = true;
-      multiColOrderBy = orderByAttrs.size() > 1;
     }
     if (isEmpty()) {
       return;
@@ -486,12 +482,12 @@ public class CompactRangeIndex extends AbstractIndex {
 
     int limit = -1;
     Boolean applyLimit = (Boolean) context.cacheGet(CompiledValue.CAN_APPLY_LIMIT_AT_INDEX);
-    if ((applyLimit != null) && applyLimit.booleanValue()) {
+    if (applyLimit != null && applyLimit) {
       limit = (Integer) context.cacheGet(CompiledValue.RESULT_LIMIT);
     }
     Boolean orderByClause = (Boolean) context.cacheGet(CompiledValue.CAN_APPLY_ORDER_BY_AT_INDEX);
 
-    List orderByAttrs = null;
+    List orderByAttrs;
     boolean asc = true;
     boolean multiColOrderBy = false;
     if (orderByClause != null && orderByClause) {
@@ -1303,7 +1299,7 @@ public class CompactRangeIndex extends AbstractIndex {
         Support.Assert(this.indexResultSetType != null,
             "IMQEvaluator::evaluate:The StrcutType should have been initialized during index creation");
       } catch (Exception e) {
-        logger.warn(e);
+        logger.debug(e);
         throw new Error("Unable to reevaluate, this should not happen");
       }
       return context;

@@ -566,7 +566,7 @@ public class CompiledComparison extends AbstractCompiledValue
       } finally {
         observer.afterIndexLookup(data);
       }
-      return QueryUtils.getconditionedRelationshipIndexResultsExpandedToTopOrCGJLevel(data,
+      return QueryUtils.getConditionedRelationshipIndexResultsExpandedToTopOrCGJLevel(data,
           indxInfo, context, completeExpansionNeeded, iterOperands, indpdntItrs);
     } else {
       // Asif . We are in this block , this itself guarantees that this

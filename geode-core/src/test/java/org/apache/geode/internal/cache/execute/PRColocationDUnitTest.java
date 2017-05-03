@@ -1710,7 +1710,8 @@ public class PRColocationDUnitTest extends JUnit4CacheTestCase {
         } catch (InterruptedException e) {
           throw new RuntimeException(e);
         }
-        assertEquals(0, region1.getDataStore().getAllLocalBucketIds().size());
+        assertEquals("Unexpected local bucketIds: " + region1.getDataStore().getAllLocalBucketIds(),
+            0, region1.getDataStore().getAllLocalBucketIds().size());
         assertEquals(0, region1.getDataStore().getAllLocalPrimaryBucketIds().size());
       }
     };

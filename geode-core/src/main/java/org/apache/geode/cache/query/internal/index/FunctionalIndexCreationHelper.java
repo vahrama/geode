@@ -14,6 +14,8 @@
  */
 package org.apache.geode.cache.query.internal.index;
 
+import static org.apache.commons.lang.StringUtils.isEmpty;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -108,7 +110,7 @@ class FunctionalIndexCreationHelper extends IndexCreationHelper {
     prepareFromClause(imgr);
     prepareIndexExpression(indexedExpression);
     prepareProjectionAttributes(projectionAttributes);
-    Object[] data = modiyyIterDefToSuiteIMQ((CompiledIteratorDef) this.fromClauseIterators.get(0));
+    Object[] data = modifyIterDefToSuiteIMQ((CompiledIteratorDef) this.fromClauseIterators.get(0));
     if (data[0] == null || data[1] == null) {
       throw new IndexInvalidException(
           LocalizedStrings.FunctionalIndexCreationHelper_INVALID_FROM_CLAUSE_0
@@ -207,8 +209,8 @@ class FunctionalIndexCreationHelper extends IndexCreationHelper {
         if (i == 0) {
           CompiledValue cv = iterDef.getCollectionExpr();
           this.addnlProjType = rIter.getElementType();
-          String name;
-          if ((name = iterDef.getName()) == null || name.isEmpty()) {
+          String name = iterDef.getName();
+          if (isEmpty(name)) {
             // In case the name of iterator is null or blank set it to index_internal_id
             name = this.canonicalizedIteratorNames[i];
           }
@@ -527,7 +529,7 @@ class FunctionalIndexCreationHelper extends IndexCreationHelper {
     this.projectionAttributes = projectionAttributes;
   }
 
-  private Object[] modiyyIterDefToSuiteIMQ(CompiledIteratorDef iterDef)
+  private Object[] modifyIterDefToSuiteIMQ(CompiledIteratorDef iterDef)
       throws IndexInvalidException {
     Object[] retValues = {null, null};
     try {

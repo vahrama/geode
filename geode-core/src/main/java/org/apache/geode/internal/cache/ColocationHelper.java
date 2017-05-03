@@ -15,7 +15,19 @@
 
 package org.apache.geode.internal.cache;
 
-import static org.apache.geode.internal.lang.SystemUtils.getLineSeparator;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+
+import org.apache.logging.log4j.Logger;
 
 import org.apache.geode.cache.DiskStore;
 import org.apache.geode.cache.EntryDestroyedException;
@@ -32,23 +44,13 @@ import org.apache.geode.internal.cache.persistence.PRPersistentConfig;
 import org.apache.geode.internal.cache.wan.parallel.ParallelGatewaySenderQueue;
 import org.apache.geode.internal.i18n.LocalizedStrings;
 import org.apache.geode.internal.logging.LogService;
-import org.apache.geode.internal.logging.log4j.LocalizedMessage;
-
-import org.apache.logging.log4j.Logger;
-
-import java.io.Serializable;
-import java.util.*;
-import java.util.Map.Entry;
 
 /**
  * An utility class to retrieve colocated regions in a colocation hierarchy in various scenarios
- * 
- * 
+ *
  * @since GemFire 6.0
  */
 public class ColocationHelper {
-
-  /** Logging mechanism for debugging */
   private static final Logger logger = LogService.getLogger();
 
   /**
@@ -136,7 +138,7 @@ public class ColocationHelper {
         }
         if (prConf.getColocatedWith() != null) {
           if (prConf.getColocatedWith().equals(tempToBeColocatedWith.getFullPath())
-              || (getLineSeparator() + prConf.getColocatedWith())
+              || (Region.SEPARATOR + prConf.getColocatedWith())
                   .equals(tempToBeColocatedWith.getFullPath())) {
             colocatedRegions.add(prConf);
             tempcolocatedRegions.add(prConf);

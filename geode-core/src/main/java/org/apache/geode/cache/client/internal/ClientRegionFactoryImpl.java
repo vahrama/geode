@@ -14,6 +14,8 @@
  */
 package org.apache.geode.cache.client.internal;
 
+import static org.apache.commons.lang.StringUtils.isEmpty;
+
 import org.apache.geode.cache.AttributesFactory;
 import org.apache.geode.cache.CacheListener;
 import org.apache.geode.cache.CustomExpiry;
@@ -218,7 +220,7 @@ public class ClientRegionFactoryImpl<K, V> implements ClientRegionFactory<K, V> 
   @SuppressWarnings("deprecation")
   private RegionAttributes<K, V> createRegionAttributes() {
     RegionAttributes<K, V> ra = this.attrsFactory.create();
-    if (ra.getPoolName() == null || ra.getPoolName().isEmpty()) {
+    if (isEmpty(ra.getPoolName())) {
       UserSpecifiedRegionAttributes<K, V> ura = (UserSpecifiedRegionAttributes<K, V>) ra;
       if (ura.requiresPoolName) {
         Pool dp = getDefaultPool();
@@ -232,17 +234,4 @@ public class ClientRegionFactoryImpl<K, V> implements ClientRegionFactory<K, V> 
     }
     return ra;
   }
-
-  // public ClientRegionFactory<K, V> addParallelGatewaySenderId(
-  // String parallelGatewaySenderId) {
-  // this.attrsFactory.addParallelGatewaySenderId(parallelGatewaySenderId);
-  // return this;
-  // }
-  //
-  // public ClientRegionFactory<K, V> addSerialGatewaySenderId(
-  // String serialGatewaySenderId) {
-  // this.attrsFactory.addSerialGatewaySenderId(serialGatewaySenderId);
-  // return this;
-  // }
-
 }

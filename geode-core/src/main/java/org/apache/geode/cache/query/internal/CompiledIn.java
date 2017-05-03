@@ -174,7 +174,7 @@ public class CompiledIn extends AbstractCompiledValue implements Indexable {
     if (pAndK != null) {
       CompiledValue path = pAndK._path;
       CompiledValue indexKey = pAndK._key;
-      IndexData indexData = QueryUtils.getAvailableIndexIfAny(path, context, this.TOK_EQ);
+      IndexData indexData = QueryUtils.getAvailableIndexIfAny(path, context, TOK_EQ);
       IndexProtocol index = null;
       if (indexData != null) {
         index = indexData.getIndex();
