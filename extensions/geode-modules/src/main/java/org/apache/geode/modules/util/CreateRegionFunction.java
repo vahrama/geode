@@ -24,18 +24,19 @@ import org.apache.geode.InternalGemFireError;
 import org.apache.geode.cache.AttributesFactory;
 import org.apache.geode.cache.Cache;
 import org.apache.geode.cache.CacheFactory;
-import org.apache.geode.cache.CacheWriterException;
 import org.apache.geode.cache.Declarable;
 import org.apache.geode.cache.Region;
 import org.apache.geode.cache.RegionAttributes;
+import org.apache.geode.cache.RegionFactory;
+import org.apache.geode.cache.RegionShortcut;
 import org.apache.geode.cache.Scope;
-import org.apache.geode.cache.TimeoutException;
+import org.apache.geode.cache.client.ClientCache;
 import org.apache.geode.cache.execute.Function;
 import org.apache.geode.cache.execute.FunctionContext;
 import org.apache.geode.cache.partition.PartitionRegionHelper;
 import org.apache.geode.distributed.DistributedLockService;
 import org.apache.geode.distributed.internal.locks.DistributedMemberLock;
-import org.apache.geode.internal.cache.InternalCache;
+import org.apache.geode.internal.cache.GemFireCacheImpl;
 import org.apache.geode.internal.cache.InternalRegionArguments;
 import org.apache.geode.internal.cache.PartitionedRegion;
 import org.apache.geode.internal.cache.xmlcache.CacheXmlGenerator;
@@ -57,16 +58,20 @@ public class CreateRegionFunction implements Function, Declarable {
   private static final String REGION_CONFIGURATION_METADATA_REGION =
       "__regionConfigurationMetadata";
 
-  CreateRegionFunction() {
+  public CreateRegionFunction() {
     this(CacheFactory.getAnyInstance());
   }
 
-  private CreateRegionFunction(Cache cache) {
+  public CreateRegionFunction(Cache cache) {
     this.cache = cache;
     this.regionConfigurationsRegion = createRegionConfigurationMetadataRegion();
   }
 
-  @Override
+  public CreateRegionFunction(ClientCache cache) {
+    this.cache = null;
+    this.regionConfigurationsRegion = null;
+  }
+
   public void execute(FunctionContext context) {
     RegionConfiguration configuration = (RegionConfiguration) context.getArguments();
     if (this.cache.getLogger().fineEnabled()) {
@@ -87,19 +92,19 @@ public class CreateRegionFunction implements Function, Declarable {
   }
 
   private RegionStatus createOrRetrieveRegion(RegionConfiguration configuration) {
+    RegionStatus status = null;
     String regionName = configuration.getRegionName();
     if (this.cache.getLogger().fineEnabled()) {
       this.cache.getLogger().fine("Function " + ID + " retrieving region named: " + regionName);
     }
-    Region<Object, Object> region = this.cache.getRegion(regionName);
-    RegionStatus status;
+    Region region = this.cache.getRegion(regionName);
     if (region == null) {
       status = createRegion(configuration);
     } else {
       status = RegionStatus.VALID;
       try {
         RegionHelper.validateRegion(this.cache, configuration, region);
-      } catch (RuntimeException e) {
+      } catch (Exception e) {
         if (!e.getMessage()
             .equals(LocalizedStrings.RegionAttributesCreation_CACHELISTENERS_ARE_NOT_THE_SAME
                 .toLocalizedString())) {
@@ -111,28 +116,23 @@ public class CreateRegionFunction implements Function, Declarable {
     return status;
   }
 
-  @Override
   public String getId() {
     return ID;
   }
 
-  @Override
   public boolean optimizeForWrite() {
     return false;
   }
 
-  @Override
   public boolean isHA() {
     return true;
   }
 
-  @Override
   public boolean hasResult() {
     return true;
   }
 
-  @Override
-  public void init(Properties props) {}
+  public void init(Properties properties) {}
 
   private RegionStatus createRegion(RegionConfiguration configuration) {
     // Get a distributed lock
@@ -140,23 +140,23 @@ public class CreateRegionFunction implements Function, Declarable {
     if (this.cache.getLogger().fineEnabled()) {
       this.cache.getLogger().fine(this + ": Attempting to lock " + dml);
     }
-    RegionStatus status;
+    long start = 0, end = 0;
+    RegionStatus status = null;
     try {
-      long start = 0;
       if (this.cache.getLogger().fineEnabled()) {
         start = System.currentTimeMillis();
       }
       // Obtain a lock on the distributed lock
       dml.lockInterruptibly();
       if (this.cache.getLogger().fineEnabled()) {
-        long end = System.currentTimeMillis();
+        end = System.currentTimeMillis();
         this.cache.getLogger()
             .fine(this + ": Obtained lock on " + dml + " in " + (end - start) + " ms");
       }
 
       // Attempt to get the region again after the lock has been obtained
       String regionName = configuration.getRegionName();
-      Region<Object, Object> region = this.cache.getRegion(regionName);
+      Region region = this.cache.getRegion(regionName);
 
       // If it exists now, validate it.
       // Else put an entry into the sessionRegionConfigurationsRegion
@@ -182,7 +182,7 @@ public class CreateRegionFunction implements Function, Declarable {
         status = RegionStatus.VALID;
         try {
           RegionHelper.validateRegion(this.cache, configuration, region);
-        } catch (RuntimeException e) {
+        } catch (Exception e) {
           if (!e.getMessage()
               .equals(LocalizedStrings.RegionAttributesCreation_CACHELISTENERS_ARE_NOT_THE_SAME
                   .toLocalizedString())) {
@@ -191,17 +191,17 @@ public class CreateRegionFunction implements Function, Declarable {
           status = RegionStatus.INVALID;
         }
       }
-    } catch (InterruptedException | CacheWriterException | TimeoutException e) {
+    } catch (Exception e) {
       StringBuilder builder = new StringBuilder();
       builder.append(this).append(": Caught Exception attempting to create region named ")
-          .append(configuration.getRegionName()).append(':');
+          .append(configuration.getRegionName()).append(":");
       this.cache.getLogger().warning(builder.toString(), e);
       status = RegionStatus.INVALID;
     } finally {
       // Unlock the distributed lock
       try {
         dml.unlock();
-      } catch (RuntimeException ignore) {
+      } catch (Exception ignore) {
       }
     }
     return status;
@@ -219,17 +219,19 @@ public class CreateRegionFunction implements Function, Declarable {
     if (r != null) {
       return r;
     }
-    InternalCache internalCache = (InternalCache) this.cache;
+    GemFireCacheImpl gemFireCache = (GemFireCacheImpl) cache;
     InternalRegionArguments ira = new InternalRegionArguments().setInternalRegion(true);
-    AttributesFactory<String, RegionConfiguration> af = new AttributesFactory<>();
+    AttributesFactory af = new AttributesFactory();
     af.setScope(Scope.LOCAL);
     af.addCacheListener(new RegionConfigurationCacheListener());
-    RegionAttributes<String, RegionConfiguration> ra = af.create();
+    RegionAttributes ra = af.create();
     try {
-      return internalCache.createVMRegion(REGION_CONFIGURATION_METADATA_REGION, ra, ira);
+      return gemFireCache.createVMRegion(REGION_CONFIGURATION_METADATA_REGION, ra, ira);
     } catch (IOException | ClassNotFoundException e) {
-      throw new InternalGemFireError(
-          LocalizedStrings.GemFireCache_UNEXPECTED_EXCEPTION.toLocalizedString(), e);
+      InternalGemFireError assErr = new InternalGemFireError(
+          LocalizedStrings.GemFireCache_UNEXPECTED_EXCEPTION.toLocalizedString());
+      assErr.initCause(e);
+      throw assErr;
     }
   }
 
@@ -239,7 +241,7 @@ public class CreateRegionFunction implements Function, Declarable {
       PrintWriter pw = new PrintWriter(new FileWriter(file), true);
       CacheXmlGenerator.generate(this.cache, pw);
       pw.close();
-    } catch (IOException ignore) {
+    } catch (IOException e) {
     }
   }
 

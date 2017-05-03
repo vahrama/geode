@@ -12,6 +12,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+
 package org.apache.geode.modules.session.internal.common;
 
 /**
@@ -36,7 +37,7 @@ public enum CacheProperty {
   /**
    * This parameter can take the following values which match the respective attribute container
    * classes
-   * <p>
+   * <p/>
    * delta_queued : QueuedDeltaSessionAttributes delta_immediate : DeltaSessionAttributes immediate
    * : ImmediateSessionAttributes queued : QueuedSessionAttributes
    */
@@ -44,18 +45,18 @@ public enum CacheProperty {
 
   /**
    * This parameter can take the following values:
-   * <p>
+   * <p/>
    * set (default) set_and_get
    */
   REPLICATION_TRIGGER(String.class);
 
-  private final Class clazz;
+  Class clazz;
 
   CacheProperty(Class clazz) {
     this.clazz = clazz;
   }
 
   public Class getClazz() {
-    return this.clazz;
+    return clazz;
   }
 }
