@@ -14,7 +14,6 @@
  */
 package org.apache.geode.cache.client;
 
-import static org.apache.commons.lang.StringUtils.isEmpty;
 import static org.apache.geode.distributed.ConfigurationProperties.*;
 
 import java.util.Properties;
