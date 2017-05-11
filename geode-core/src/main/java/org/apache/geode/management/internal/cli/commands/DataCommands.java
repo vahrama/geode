@@ -1132,7 +1132,7 @@ public class DataCommands implements CommandMarker {
     }
 
     Object[] arguments = new Object[] {query, stepName, interactive};
-    CLIStep exec = new DataCommandFunction.SelectExecStep(arguments, getCache());
+    CLIStep exec = new DataCommandFunction.SelectExecStep(arguments);
     CLIStep display = new DataCommandFunction.SelectDisplayStep(arguments);
     CLIStep move = new DataCommandFunction.SelectMoveStep(arguments);
     CLIStep quit = new DataCommandFunction.SelectQuitStep(arguments);

@@ -924,11 +924,8 @@ public class DataCommandFunction extends FunctionAdapter implements InternalEnti
 
     private static SecurityService securityService = SecurityService.getSecurityService();
 
-    private final InternalCache cache;
-
-    public SelectExecStep(Object[] arguments, final InternalCache cache) {
+    public SelectExecStep(Object[] arguments) {
       super(SELECT_STEP_EXEC, arguments);
-      this.cache = cache;
     }
 
     @Override
