@@ -143,7 +143,8 @@ public class RegisterInterest61 extends BaseCommand {
     if (logger.isDebugEnabled()) {
       logger.debug(
           "{}: Received register interest 61 request ({} bytes) from {} for region {} key {}",
-          serverConnection.getName(), clientMessage.getPayloadLength(), serverConnection.getSocketString(), regionName, key);
+          serverConnection.getName(), clientMessage.getPayloadLength(),
+          serverConnection.getSocketString(), regionName, key);
     }
 
     // test hook to trigger vMotion during register Interest
@@ -176,7 +177,7 @@ public class RegisterInterest61 extends BaseCommand {
     if (region == null) {
       logger.info(LocalizedMessage.create(
           LocalizedStrings.RegisterInterest_0_REGION_NAMED_1_WAS_NOT_FOUND_DURING_REGISTER_INTEREST_REQUEST,
-          new Object[] { serverConnection.getName(), regionName}));
+          new Object[] {serverConnection.getName(), regionName}));
       // writeChunkedErrorResponse(msg,
       // MessageType.REGISTER_INTEREST_DATA_ERROR, message);
       // responded = true;
@@ -198,9 +199,9 @@ public class RegisterInterest61 extends BaseCommand {
           key = registerContext.getKey();
         }
       }
-      serverConnection.getAcceptor().getCacheClientNotifier().registerClientInterest(regionName, key,
-          serverConnection.getProxyID(), interestType, isDurable, sendUpdatesAsInvalidates, true,
-          regionDataPolicyPartBytes[0], true);
+      serverConnection.getAcceptor().getCacheClientNotifier().registerClientInterest(regionName,
+          key, serverConnection.getProxyID(), interestType, isDurable, sendUpdatesAsInvalidates,
+          true, regionDataPolicyPartBytes[0], true);
     } catch (Exception e) {
       // If an interrupted exception is thrown , rethrow it
       checkForInterrupt(serverConnection, e);
@@ -217,8 +218,8 @@ public class RegisterInterest61 extends BaseCommand {
     // DistributionStats.getStatTime() - start);
     // start = DistributionStats.getStatTime();
 
-    CacheClientProxy ccp =
-        serverConnection.getAcceptor().getCacheClientNotifier().getClientProxy(serverConnection.getProxyID());
+    CacheClientProxy ccp = serverConnection.getAcceptor().getCacheClientNotifier()
+        .getClientProxy(serverConnection.getProxyID());
     if (ccp == null) {
       // fix for 37593
       IOException ioex = new IOException(
@@ -265,8 +266,8 @@ public class RegisterInterest61 extends BaseCommand {
         // logger.debug(getName() + ": Sent chunk (1 of 1) of register interest
         // response (" + chunkedResponseMsg.getBufferLength() + " bytes) for
         // region " + regionName + " key " + key);
-        logger.debug("{}: Sent register interest response for region {} key {}", serverConnection.getName(),
-            regionName, key);
+        logger.debug("{}: Sent register interest response for region {} key {}",
+            serverConnection.getName(), regionName, key);
       }
       // bserverStats.incLong(writeDestroyResponseTimeId,
       // DistributionStats.getStatTime() - start);

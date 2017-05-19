@@ -94,15 +94,16 @@ public class Put extends BaseCommand {
 
     if (logger.isTraceEnabled()) {
       logger.trace("{}: Received put request ({} bytes) from {} for region {} key {} value {}",
-          serverConnection.getName(), clientMessage.getPayloadLength(), serverConnection.getSocketString(), regionName, key,
-          valuePart);
+          serverConnection.getName(), clientMessage.getPayloadLength(),
+          serverConnection.getSocketString(), regionName, key, valuePart);
     }
 
     // Process the put request
     if (key == null || regionName == null) {
       if (key == null) {
         logger.warn(LocalizedMessage.create(
-            LocalizedStrings.Put_0_THE_INPUT_KEY_FOR_THE_PUT_REQUEST_IS_NULL, serverConnection.getName()));
+            LocalizedStrings.Put_0_THE_INPUT_KEY_FOR_THE_PUT_REQUEST_IS_NULL,
+            serverConnection.getName()));
         errMessage =
             LocalizedStrings.Put_THE_INPUT_KEY_FOR_THE_PUT_REQUEST_IS_NULL.toLocalizedString();
       }
@@ -113,7 +114,8 @@ public class Put extends BaseCommand {
         errMessage = LocalizedStrings.Put_THE_INPUT_REGION_NAME_FOR_THE_PUT_REQUEST_IS_NULL
             .toLocalizedString();
       }
-      writeErrorResponse(clientMessage, MessageType.PUT_DATA_ERROR, errMessage.toString(), serverConnection);
+      writeErrorResponse(clientMessage, MessageType.PUT_DATA_ERROR, errMessage.toString(),
+          serverConnection);
       serverConnection.setAsTrue(RESPONDED);
       return;
     }
@@ -131,7 +133,7 @@ public class Put extends BaseCommand {
       // Invalid to 'put' a null value in an existing key
       logger.info(LocalizedMessage.create(
           LocalizedStrings.Put_0_ATTEMPTED_TO_PUT_A_NULL_VALUE_FOR_EXISTING_KEY_1,
-          new Object[] { serverConnection.getName(), key}));
+          new Object[] {serverConnection.getName(), key}));
       errMessage =
           LocalizedStrings.Put_ATTEMPTED_TO_PUT_A_NULL_VALUE_FOR_EXISTING_KEY_0.toLocalizedString();
       writeErrorResponse(clientMessage, MessageType.PUT_DATA_ERROR, errMessage, serverConnection);
@@ -142,7 +144,8 @@ public class Put extends BaseCommand {
     ByteBuffer eventIdPartsBuffer = ByteBuffer.wrap(eventPart.getSerializedForm());
     long threadId = EventID.readEventIdPartsFromOptmizedByteArray(eventIdPartsBuffer);
     long sequenceId = EventID.readEventIdPartsFromOptmizedByteArray(eventIdPartsBuffer);
-    EventID eventId = new EventID(serverConnection.getEventMemberIDByteArray(), threadId, sequenceId);
+    EventID eventId =
+        new EventID(serverConnection.getEventMemberIDByteArray(), threadId, sequenceId);
 
     try {
       byte[] value = valuePart.getSerializedForm();
@@ -173,8 +176,8 @@ public class Put extends BaseCommand {
         // Create the null entry. Since the value is null, the value of the
         // isObject
         // the true after null doesn't matter and is not used.
-        result = region.basicBridgeCreate(key, null, true, callbackArg, serverConnection.getProxyID(), true,
-            new EventIDHolder(eventId), false);
+        result = region.basicBridgeCreate(key, null, true, callbackArg,
+            serverConnection.getProxyID(), true, new EventIDHolder(eventId), false);
       } else {
         // Put the entry
         result = region.basicBridgePut(key, value, null, isObject, callbackArg,
@@ -184,7 +187,8 @@ public class Put extends BaseCommand {
         serverConnection.setModificationInfo(true, regionName, key);
       } else {
         StringId message = LocalizedStrings.PUT_0_FAILED_TO_PUT_ENTRY_FOR_REGION_1_KEY_2_VALUE_3;
-        Object[] messageArgs = new Object[] { serverConnection.getName(), regionName, key, valuePart};
+        Object[] messageArgs =
+            new Object[] {serverConnection.getName(), regionName, key, valuePart};
         String s = message.toLocalizedString(messageArgs);
         logger.info(s);
         throw new Exception(s);
@@ -227,7 +231,8 @@ public class Put extends BaseCommand {
     serverConnection.setAsTrue(RESPONDED);
     if (logger.isDebugEnabled()) {
       logger.debug("{}: Sent put response back to {} for region {} key {} value {}",
-          serverConnection.getName(), serverConnection.getSocketString(), regionName, key, valuePart);
+          serverConnection.getName(), serverConnection.getSocketString(), regionName, key,
+          valuePart);
     }
     stats.incWritePutResponseTime(DistributionStats.getStatTime() - start);
   }

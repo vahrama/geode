@@ -49,7 +49,8 @@ public class RequestEventValue extends BaseCommand {
 
   private RequestEventValue() {}
 
-  public void cmdExecute(Message clientMessage, ServerConnection serverConnection, long start) throws IOException {
+  public void cmdExecute(Message clientMessage, ServerConnection serverConnection, long start)
+      throws IOException {
     Part eventIDPart = null, valuePart = null;
     EventID event = null;
     Object callbackArg = null;
@@ -67,7 +68,8 @@ public class RequestEventValue extends BaseCommand {
           LocalizedStrings.RequestEventValue_0_THE_EVENT_ID_FOR_THE_GET_EVENT_VALUE_REQUEST_IS_NULL,
           serverConnection.getName()));
       errMessage.append(" The event id for the get event value request is null.");
-      writeErrorResponse(clientMessage, MessageType.REQUESTDATAERROR, errMessage.toString(), serverConnection);
+      writeErrorResponse(clientMessage, MessageType.REQUESTDATAERROR, errMessage.toString(),
+          serverConnection);
       serverConnection.setAsTrue(RESPONDED);
     } else {
       try {
@@ -90,8 +92,9 @@ public class RequestEventValue extends BaseCommand {
         }
       }
       if (logger.isTraceEnabled()) {
-        logger.trace("{}: Received get event value request ({} bytes) from {}", serverConnection.getName(),
-            clientMessage.getPayloadLength(), serverConnection.getSocketString());
+        logger.trace("{}: Received get event value request ({} bytes) from {}",
+            serverConnection.getName(), clientMessage.getPayloadLength(),
+            serverConnection.getSocketString());
       }
       CacheClientNotifier ccn = serverConnection.getAcceptor().getCacheClientNotifier();
       // Get the ha container.
@@ -110,7 +113,8 @@ public class RequestEventValue extends BaseCommand {
                 LocalizedStrings.RequestEventValue_UNABLE_TO_FIND_A_CLIENT_UPDATE_MESSAGE_FOR_0,
                 event));
             String msgStr = "No value found for " + event + " in " + haContainer.getName();
-            writeErrorResponse(clientMessage, MessageType.REQUEST_EVENT_VALUE_ERROR, msgStr, serverConnection);
+            writeErrorResponse(clientMessage, MessageType.REQUEST_EVENT_VALUE_ERROR, msgStr,
+                serverConnection);
             serverConnection.setAsTrue(RESPONDED);
             return;
           } else {
@@ -140,10 +144,12 @@ public class RequestEventValue extends BaseCommand {
 
         writeResponse(data, callbackArg, clientMessage, isObject, serverConnection);
         serverConnection.setAsTrue(RESPONDED);
-        ccn.getClientProxy(serverConnection.getProxyID()).getStatistics().incDeltaFullMessagesSent();
+        ccn.getClientProxy(serverConnection.getProxyID()).getStatistics()
+            .incDeltaFullMessagesSent();
         if (logger.isDebugEnabled()) {
           logger.debug("{}: Wrote get event value response back to {} for ha container {}",
-              serverConnection.getName(), serverConnection.getSocketString(), haContainer.getName());
+              serverConnection.getName(), serverConnection.getSocketString(),
+              haContainer.getName());
         }
       }
     }

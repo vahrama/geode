@@ -64,7 +64,8 @@ public class ExecuteFunction extends BaseCommand {
   }
 
   @Override
-  public void cmdExecute(Message clientMessage, ServerConnection servConn, long start) throws IOException {
+  public void cmdExecute(Message clientMessage, ServerConnection servConn, long start)
+      throws IOException {
     Object function = null;
     Object args = null;
     MemberMappedArgument memberMappedArg = null;

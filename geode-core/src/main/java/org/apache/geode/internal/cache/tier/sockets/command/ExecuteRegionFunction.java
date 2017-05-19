@@ -63,7 +63,8 @@ public class ExecuteRegionFunction extends BaseCommand {
   private ExecuteRegionFunction() {}
 
   @Override
-  public void cmdExecute(Message clientMessage, ServerConnection servConn, long start) throws IOException {
+  public void cmdExecute(Message clientMessage, ServerConnection servConn, long start)
+      throws IOException {
     String regionName = null;
     Object function = null;
     Object args = null;

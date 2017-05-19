@@ -41,8 +41,8 @@ public abstract class CacheRuntimeException extends GemFireException {
   }
 
   /**
-   * Constructs an instance of {@code CacheRuntimeException} with the specified detail message
-   * and cause.
+   * Constructs an instance of {@code CacheRuntimeException} with the specified detail message and
+   * cause.
    * 
    * @param msg the detail message
    * @param cause the causal Throwable

@@ -95,9 +95,10 @@ public class RemoveAll extends BaseCommand {
             LocalizedStrings.RemoveAll_THE_INPUT_REGION_NAME_FOR_THE_REMOVEALL_REQUEST_IS_NULL
                 .toLocalizedString();
         logger.warn(LocalizedMessage.create(LocalizedStrings.TWO_ARG_COLON,
-            new Object[] { serverConnection.getName(), txt}));
+            new Object[] {serverConnection.getName(), txt}));
         errMessage.append(txt);
-        writeChunkedErrorResponse(clientMessage, MessageType.PUT_DATA_ERROR, errMessage.toString(), serverConnection);
+        writeChunkedErrorResponse(clientMessage, MessageType.PUT_DATA_ERROR, errMessage.toString(),
+            serverConnection);
         serverConnection.setAsTrue(RESPONDED);
         return;
       }
@@ -114,7 +115,8 @@ public class RemoveAll extends BaseCommand {
       ByteBuffer eventIdPartsBuffer = ByteBuffer.wrap(eventPart.getSerializedForm());
       long threadId = EventID.readEventIdPartsFromOptmizedByteArray(eventIdPartsBuffer);
       long sequenceId = EventID.readEventIdPartsFromOptmizedByteArray(eventIdPartsBuffer);
-      EventID eventId = new EventID(serverConnection.getEventMemberIDByteArray(), threadId, sequenceId);
+      EventID eventId =
+          new EventID(serverConnection.getEventMemberIDByteArray(), threadId, sequenceId);
 
       Breadcrumbs.setEventId(eventId);
 
@@ -133,9 +135,9 @@ public class RemoveAll extends BaseCommand {
       if (logger.isDebugEnabled()) {
         StringBuilder buffer = new StringBuilder();
         buffer.append(serverConnection.getName()).append(": Received removeAll request from ")
-              .append(serverConnection.getSocketString()).append(" for region ").append(regionName)
-              .append(callbackArg != null ? (" callbackArg " + callbackArg) : "").append(" with ")
-              .append(numberOfKeys).append(" keys.");
+            .append(serverConnection.getSocketString()).append(" for region ").append(regionName)
+            .append(callbackArg != null ? (" callbackArg " + callbackArg) : "").append(" with ")
+            .append(numberOfKeys).append(" keys.");
         logger.debug(buffer);
       }
       ArrayList<Object> keys = new ArrayList<Object>(numberOfKeys);
@@ -148,9 +150,10 @@ public class RemoveAll extends BaseCommand {
               LocalizedStrings.RemoveAll_ONE_OF_THE_INPUT_KEYS_FOR_THE_REMOVEALL_REQUEST_IS_NULL
                   .toLocalizedString();
           logger.warn(LocalizedMessage.create(LocalizedStrings.TWO_ARG_COLON,
-              new Object[] { serverConnection.getName(), txt}));
+              new Object[] {serverConnection.getName(), txt}));
           errMessage.append(txt);
-          writeChunkedErrorResponse(clientMessage, MessageType.PUT_DATA_ERROR, errMessage.toString(), serverConnection);
+          writeChunkedErrorResponse(clientMessage, MessageType.PUT_DATA_ERROR,
+              errMessage.toString(), serverConnection);
           serverConnection.setAsTrue(RESPONDED);
           return;
         }
@@ -180,8 +183,9 @@ public class RemoveAll extends BaseCommand {
         keys.add(key);
       } // for
 
-      if (clientMessage.getNumberOfParts() == (5 + numberOfKeys + 1)) {// it means optional timeout has been
-                                                             // added
+      if (clientMessage.getNumberOfParts() == (5 + numberOfKeys + 1)) {// it means optional timeout
+                                                                       // has been
+        // added
         int timeout = clientMessage.getPart(5 + numberOfKeys).getInt();
         serverConnection.setRequestSpecificTimeout(timeout);
       }
@@ -199,8 +203,8 @@ public class RemoveAll extends BaseCommand {
         }
       }
 
-      response = region.basicBridgeRemoveAll(keys, retryVersions, serverConnection.getProxyID(), eventId,
-          callbackArg);
+      response = region.basicBridgeRemoveAll(keys, retryVersions, serverConnection.getProxyID(),
+          eventId, callbackArg);
       if (!region.getConcurrencyChecksEnabled() || clientIsEmpty || !clientHasCCEnabled) {
         // the client only needs this if versioning is being used and the client
         // has storage
@@ -215,7 +219,8 @@ public class RemoveAll extends BaseCommand {
       if (region instanceof PartitionedRegion) {
         PartitionedRegion pr = (PartitionedRegion) region;
         if (pr.getNetworkHopType() != PartitionedRegion.NETWORK_HOP_NONE) {
-          writeReplyWithRefreshMetadata(clientMessage, response, serverConnection, pr, pr.getNetworkHopType());
+          writeReplyWithRefreshMetadata(clientMessage, response, serverConnection, pr,
+              pr.getNetworkHopType());
           pr.clearNetworkHopData();
           replyWithMetaData = true;
         }
@@ -250,8 +255,9 @@ public class RemoveAll extends BaseCommand {
       stats.incProcessRemoveAllTime(start - oldStart);
     }
     if (logger.isDebugEnabled()) {
-      logger.debug("{}: Sending removeAll response back to {} for region {}{}", serverConnection.getName(),
-          serverConnection.getSocketString(), regionName, (logger.isTraceEnabled() ? ": " + response : ""));
+      logger.debug("{}: Sending removeAll response back to {} for region {}{}",
+          serverConnection.getName(), serverConnection.getSocketString(), regionName,
+          (logger.isTraceEnabled() ? ": " + response : ""));
     }
 
     // Increment statistics and write the reply

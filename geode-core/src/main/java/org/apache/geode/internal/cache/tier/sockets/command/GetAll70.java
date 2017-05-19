@@ -78,8 +78,9 @@ public class GetAll70 extends BaseCommand {
     if (logger.isDebugEnabled()) {
       StringBuffer buffer = new StringBuffer();
       buffer.append(serverConnection.getName()).append(": Received getAll request (")
-            .append(clientMessage.getPayloadLength()).append(" bytes) from ").append(serverConnection.getSocketString())
-            .append(" for region ").append(regionName).append(" keys ");
+          .append(clientMessage.getPayloadLength()).append(" bytes) from ")
+          .append(serverConnection.getSocketString()).append(" for region ").append(regionName)
+          .append(" keys ");
       if (keys != null) {
         for (int i = 0; i < keys.length; i++) {
           buffer.append(keys[i]).append(" ");
@@ -99,7 +100,8 @@ public class GetAll70 extends BaseCommand {
             .toLocalizedString();
       }
       logger.warn("{}: {}", serverConnection.getName(), message);
-      writeChunkedErrorResponse(clientMessage, MessageType.GET_ALL_DATA_ERROR, message, serverConnection);
+      writeChunkedErrorResponse(clientMessage, MessageType.GET_ALL_DATA_ERROR, message,
+          serverConnection);
       serverConnection.setAsTrue(RESPONDED);
       return;
     }
@@ -120,7 +122,8 @@ public class GetAll70 extends BaseCommand {
 
     // Send chunk response
     try {
-      fillAndSendGetAllResponseChunks(region, regionName, keys, serverConnection, requestSerializedValues);
+      fillAndSendGetAllResponseChunks(region, regionName, keys, serverConnection,
+          requestSerializedValues);
       serverConnection.setAsTrue(RESPONDED);
     } catch (Exception e) {
       // If an interrupted exception is thrown , rethrow it

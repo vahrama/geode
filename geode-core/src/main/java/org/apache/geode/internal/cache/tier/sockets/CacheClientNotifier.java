@@ -125,16 +125,16 @@ public class CacheClientNotifier {
    * BridgeServer.SOCKET_BUFFER_SIZE system property.
    */
   private static final int socketBufferSize =
-    Integer.getInteger("BridgeServer.SOCKET_BUFFER_SIZE", 32768);
+      Integer.getInteger("BridgeServer.SOCKET_BUFFER_SIZE", 32768);
 
   private static final long CLIENT_PING_TASK_PERIOD =
-    Long.getLong(DistributionConfig.GEMFIRE_PREFIX + "serverToClientPingPeriod", 60000);
+      Long.getLong(DistributionConfig.GEMFIRE_PREFIX + "serverToClientPingPeriod", 60000);
 
   /**
    * package-private to avoid synthetic accessor
    */
   static final long CLIENT_PING_TASK_COUNTER =
-    Long.getLong(DistributionConfig.GEMFIRE_PREFIX + "serverToClientPingCounter", 3);
+      Long.getLong(DistributionConfig.GEMFIRE_PREFIX + "serverToClientPingCounter", 3);
 
   private static volatile CacheClientNotifier ccnSingleton;
 
@@ -189,7 +189,7 @@ public class CacheClientNotifier {
    * provide a read-only {@code Set} of listeners.
    */
   private final Set readableInterestRegistrationListeners =
-    Collections.unmodifiableSet(this.writableInterestRegistrationListeners);
+      Collections.unmodifiableSet(this.writableInterestRegistrationListeners);
 
   private final Map<String, DefaultQuery> compiledQueries = new ConcurrentHashMap<>();
 

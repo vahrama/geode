@@ -43,11 +43,12 @@ public class MakePrimary extends BaseCommand {
     final boolean isDebugEnabled = logger.isDebugEnabled();
     if (isDebugEnabled) {
       logger.debug("{}: Received make primary request ({} bytes) isClientReady={}: from {}",
-          serverConnection.getName(), clientMessage.getPayloadLength(), isClientReady, serverConnection.getSocketString());
+          serverConnection.getName(), clientMessage.getPayloadLength(), isClientReady,
+          serverConnection.getSocketString());
     }
     try {
-      serverConnection.getAcceptor().getCacheClientNotifier().makePrimary(serverConnection.getProxyID(),
-          isClientReady);
+      serverConnection.getAcceptor().getCacheClientNotifier()
+          .makePrimary(serverConnection.getProxyID(), isClientReady);
       writeReply(clientMessage, serverConnection);
       serverConnection.setAsTrue(RESPONDED);
 

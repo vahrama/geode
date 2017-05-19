@@ -56,7 +56,8 @@ public class GetDurableCQs extends BaseCQCommand {
 
     if (logger.isDebugEnabled()) {
       logger.debug("{}: Received {} request from {}", serverConnection.getName(),
-          MessageType.getString(clientMessage.getMessageType()), serverConnection.getSocketString());
+          MessageType.getString(clientMessage.getMessageType()),
+          serverConnection.getSocketString());
     }
 
     DefaultQueryService qService = null;
@@ -87,8 +88,8 @@ public class GetDurableCQs extends BaseCQCommand {
         Object durableCqName = it.next();
         durableCqList.add(durableCqName);
         if (isTraceEnabled) {
-          logger.trace("{}: getDurableCqsResponse <{}>; list size was {}", serverConnection.getName(),
-              durableCqName, durableCqList.size());
+          logger.trace("{}: getDurableCqsResponse <{}>; list size was {}",
+              serverConnection.getName(), durableCqName, durableCqList.size());
         }
         if (durableCqList.size() == MAXIMUM_CHUNK_SIZE) {
           // Send the chunk and clear the list
@@ -100,7 +101,8 @@ public class GetDurableCQs extends BaseCQCommand {
       sendDurableCqsResponseChunk(durableCqList, true, serverConnection);
 
     } catch (CqException cqe) {
-      sendCqResponse(MessageType.CQ_EXCEPTION_TYPE, "", clientMessage.getTransactionId(), cqe, serverConnection);
+      sendCqResponse(MessageType.CQ_EXCEPTION_TYPE, "", clientMessage.getTransactionId(), cqe,
+          serverConnection);
       return;
     } catch (Exception e) {
       writeChunkedException(clientMessage, e, serverConnection);

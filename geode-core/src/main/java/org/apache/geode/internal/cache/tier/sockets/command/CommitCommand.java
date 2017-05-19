@@ -50,7 +50,8 @@ public class CommitCommand extends BaseCommand {
   private CommitCommand() {}
 
   @Override
-  public void cmdExecute(Message clientMessage, ServerConnection serverConnection, long start) throws IOException {
+  public void cmdExecute(Message clientMessage, ServerConnection serverConnection, long start)
+      throws IOException {
     serverConnection.setAsTrue(REQUIRES_RESPONSE);
     TXManagerImpl txMgr = (TXManagerImpl) serverConnection.getCache().getCacheTransactionManager();
     InternalDistributedMember client =

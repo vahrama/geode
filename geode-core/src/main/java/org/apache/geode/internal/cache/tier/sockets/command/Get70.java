@@ -98,8 +98,8 @@ public class Get70 extends BaseCommand {
     }
     if (logger.isDebugEnabled()) {
       logger.debug("{}: Received 7.0 get request ({} bytes) from {} for region {} key {} txId {}",
-          serverConnection.getName(), clientMessage.getPayloadLength(), serverConnection.getSocketString(), regionName, key,
-          clientMessage.getTransactionId());
+          serverConnection.getName(), clientMessage.getPayloadLength(),
+          serverConnection.getSocketString(), regionName, key, clientMessage.getTransactionId());
     }
 
     // Process the get request
@@ -197,14 +197,16 @@ public class Get70 extends BaseCommand {
       if (region instanceof PartitionedRegion) {
         PartitionedRegion pr = (PartitionedRegion) region;
         if (pr.getNetworkHopType() != PartitionedRegion.NETWORK_HOP_NONE) {
-          writeResponseWithRefreshMetadata(data, callbackArg, clientMessage, isObject, serverConnection, pr,
-              pr.getNetworkHopType(), versionTag, keyNotPresent);
+          writeResponseWithRefreshMetadata(data, callbackArg, clientMessage, isObject,
+              serverConnection, pr, pr.getNetworkHopType(), versionTag, keyNotPresent);
           pr.clearNetworkHopData();
         } else {
-          writeResponse(data, callbackArg, clientMessage, isObject, versionTag, keyNotPresent, serverConnection);
+          writeResponse(data, callbackArg, clientMessage, isObject, versionTag, keyNotPresent,
+              serverConnection);
         }
       } else {
-        writeResponse(data, callbackArg, clientMessage, isObject, versionTag, keyNotPresent, serverConnection);
+        writeResponse(data, callbackArg, clientMessage, isObject, versionTag, keyNotPresent,
+            serverConnection);
       }
     } finally {
       OffHeapHelper.release(originalData);

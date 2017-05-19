@@ -51,7 +51,8 @@ public class ExecuteFunction70 extends ExecuteFunction66 {
   private ExecuteFunction70() {}
 
   @Override
-  public void cmdExecute(Message clientMessage, ServerConnection serverConnection, long start) throws IOException {
+  public void cmdExecute(Message clientMessage, ServerConnection serverConnection, long start)
+      throws IOException {
     super.cmdExecute(clientMessage, serverConnection, start);
   }
 

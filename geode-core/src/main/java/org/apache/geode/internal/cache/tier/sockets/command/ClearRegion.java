@@ -78,8 +78,9 @@ public class ClearRegion extends BaseCommand {
     }
     regionName = regionNamePart.getString();
     if (logger.isDebugEnabled()) {
-      logger.debug(serverConnection.getName() + ": Received clear region request (" + clientMessage.getPayloadLength()
-                   + " bytes) from " + serverConnection.getSocketString() + " for region " + regionName);
+      logger.debug(serverConnection.getName() + ": Received clear region request ("
+          + clientMessage.getPayloadLength() + " bytes) from " + serverConnection.getSocketString()
+          + " for region " + regionName);
     }
 
     // Process the clear region request
@@ -91,7 +92,8 @@ public class ClearRegion extends BaseCommand {
           LocalizedStrings.ClearRegion_THE_INPUT_REGION_NAME_FOR_THE_CLEAR_REGION_REQUEST_IS_NULL
               .toLocalizedString();
 
-      writeErrorResponse(clientMessage, MessageType.CLEAR_REGION_DATA_ERROR, errMessage, serverConnection);
+      writeErrorResponse(clientMessage, MessageType.CLEAR_REGION_DATA_ERROR, errMessage,
+          serverConnection);
       serverConnection.setAsTrue(RESPONDED);
       return;
     }
@@ -108,7 +110,8 @@ public class ClearRegion extends BaseCommand {
     ByteBuffer eventIdPartsBuffer = ByteBuffer.wrap(eventPart.getSerializedForm());
     long threadId = EventID.readEventIdPartsFromOptmizedByteArray(eventIdPartsBuffer);
     long sequenceId = EventID.readEventIdPartsFromOptmizedByteArray(eventIdPartsBuffer);
-    EventID eventId = new EventID(serverConnection.getEventMemberIDByteArray(), threadId, sequenceId);
+    EventID eventId =
+        new EventID(serverConnection.getEventMemberIDByteArray(), threadId, sequenceId);
 
     try {
       // Clear the region
@@ -141,7 +144,8 @@ public class ClearRegion extends BaseCommand {
     writeReply(clientMessage, serverConnection);
     serverConnection.setAsTrue(RESPONDED);
     if (logger.isDebugEnabled()) {
-      logger.debug(serverConnection.getName() + ": Sent clear region response for region " + regionName);
+      logger.debug(
+          serverConnection.getName() + ": Sent clear region response for region " + regionName);
     }
     stats.incWriteClearRegionResponseTime(DistributionStats.getStatTime() - start);
   }

@@ -61,8 +61,9 @@ public class Query651 extends BaseCommandQuery {
         int params = clientMessage.getPart(1).getInt(); // Number of parameters.
         // In case of native client there will be extra two parameters at 2 and 3 index.
         int paramStartIndex = 2;
-        if (clientMessage.getNumberOfParts() > (1 /* type */ + 1 /* query string */ + 1 /* params length */
-                                                + params /* number of params */)) {
+        if (clientMessage
+            .getNumberOfParts() > (1 /* type */ + 1 /* query string */ + 1 /* params length */
+                + params /* number of params */)) {
           int timeout = clientMessage.getPart(3).getInt();
           serverConnection.setRequestSpecificTimeout(timeout);
           paramStartIndex = 4;
@@ -85,8 +86,8 @@ public class Query651 extends BaseCommandQuery {
     }
 
     if (logger.isDebugEnabled()) {
-      logger.debug("{}: Received query request from {} queryString: {}{}", serverConnection.getName(),
-          serverConnection.getSocketString(), queryString,
+      logger.debug("{}: Received query request from {} queryString: {}{}",
+          serverConnection.getName(), serverConnection.getSocketString(), queryString,
           (queryParams != null ? (" with num query parameters :" + queryParams.length) : ""));
     }
     try {
@@ -128,7 +129,8 @@ public class Query651 extends BaseCommandQuery {
         }
       }
 
-      processQueryUsingParams(clientMessage, query, queryString, regionNames, start, null, queryContext, serverConnection, true, queryParams);
+      processQueryUsingParams(clientMessage, query, queryString, regionNames, start, null,
+          queryContext, serverConnection, true, queryParams);
     } catch (QueryInvalidException e) {
       throw new QueryInvalidException(e.getMessage() + queryString);
     }

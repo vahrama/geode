@@ -2059,7 +2059,7 @@ public class HARegionQueue implements RegionQueue {
   private static class BlockingHARegionQueue extends HARegionQueue {
 
     private static final String EVENT_ENQUEUE_WAIT_TIME_NAME =
-      DistributionConfig.GEMFIRE_PREFIX + "subscription.EVENT_ENQUEUE_WAIT_TIME";
+        DistributionConfig.GEMFIRE_PREFIX + "subscription.EVENT_ENQUEUE_WAIT_TIME";
 
     private static final int DEFAULT_EVENT_ENQUEUE_WAIT_TIME = 100;
 
@@ -2068,7 +2068,7 @@ public class HARegionQueue implements RegionQueue {
      * logged.
      */
     private static final String MAX_QUEUE_LOG_FREQUENCY =
-      DistributionConfig.GEMFIRE_PREFIX + "logFrequency.clientQueueReachedMaxLimit";
+        DistributionConfig.GEMFIRE_PREFIX + "logFrequency.clientQueueReachedMaxLimit";
 
     private static final long DEFAULT_LOG_FREQUENCY = 1000;
 
@@ -2095,8 +2095,7 @@ public class HARegionQueue implements RegionQueue {
     private final Object permitMon = new Object();
 
     /**
-     * Lock on which the take & remove threads block awaiting data from put
-     * operations
+     * Lock on which the take & remove threads block awaiting data from put operations
      */
     private final StoppableReentrantLock lock;
 
@@ -2107,9 +2106,9 @@ public class HARegionQueue implements RegionQueue {
 
     /**
      * System property value denoting the time in milliseconds. Any thread putting an event into a
-     * subscription queue, which is full, will wait this much time for the queue to make space. It'll
-     * then enqueue the event possibly causing the queue to grow beyond its capacity/max-size. See
-     * #51400.
+     * subscription queue, which is full, will wait this much time for the queue to make space.
+     * It'll then enqueue the event possibly causing the queue to grow beyond its capacity/max-size.
+     * See #51400.
      */
     private final int enqueueEventWaitTime;
 
@@ -2142,8 +2141,7 @@ public class HARegionQueue implements RegionQueue {
     }
 
     private static int calcEnqueueEventWaitTime() {
-      int value =
-        Integer.getInteger(EVENT_ENQUEUE_WAIT_TIME_NAME, DEFAULT_EVENT_ENQUEUE_WAIT_TIME);
+      int value = Integer.getInteger(EVENT_ENQUEUE_WAIT_TIME_NAME, DEFAULT_EVENT_ENQUEUE_WAIT_TIME);
       if (value < 0) {
         value = DEFAULT_EVENT_ENQUEUE_WAIT_TIME;
       }
@@ -2209,7 +2207,7 @@ public class HARegionQueue implements RegionQueue {
                   if ((this.maxQueueSizeHitCount % this.logFrequency) == 0) {
                     logger.warn(LocalizedMessage.create(
                         LocalizedStrings.HARegionQueue_CLIENT_QUEUE_FOR_0_IS_FULL,
-                        new Object[] { this.region.getName() }));
+                        new Object[] {this.region.getName()}));
                     this.maxQueueSizeHitCount = 0;
                   }
                   ++this.maxQueueSizeHitCount;

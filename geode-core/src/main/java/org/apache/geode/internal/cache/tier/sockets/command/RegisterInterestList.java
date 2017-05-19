@@ -124,8 +124,8 @@ public class RegisterInterestList extends BaseCommand {
     if (logger.isDebugEnabled()) {
       logger.debug(
           "{}: Received register interest request ({} bytes) from {} for the following {} keys in region {}: {}",
-          serverConnection.getName(), clientMessage.getPayloadLength(), serverConnection.getSocketString(), numberOfKeys,
-          regionName, keys);
+          serverConnection.getName(), clientMessage.getPayloadLength(),
+          serverConnection.getSocketString(), numberOfKeys, regionName, keys);
     }
 
     /*
@@ -155,7 +155,8 @@ public class RegisterInterestList extends BaseCommand {
       }
       String s = errMessage.toLocalizedString();
       logger.warn("{}: {}", serverConnection.getName(), s);
-      writeChunkedErrorResponse(clientMessage, MessageType.REGISTER_INTEREST_DATA_ERROR, s, serverConnection);
+      writeChunkedErrorResponse(clientMessage, MessageType.REGISTER_INTEREST_DATA_ERROR, s,
+          serverConnection);
       serverConnection.setAsTrue(RESPONDED);
       return;
     }
@@ -165,7 +166,7 @@ public class RegisterInterestList extends BaseCommand {
     if (region == null) {
       logger.info(LocalizedMessage.create(
           LocalizedStrings.RegisterInterestList_0_REGION_NAMED_1_WAS_NOT_FOUND_DURING_REGISTER_INTEREST_LIST_REQUEST,
-          new Object[] { serverConnection.getName(), regionName}));
+          new Object[] {serverConnection.getName(), regionName}));
       // writeChunkedErrorResponse(msg,
       // MessageType.REGISTER_INTEREST_DATA_ERROR, message);
       // responded = true;
@@ -181,8 +182,8 @@ public class RegisterInterestList extends BaseCommand {
         }
       }
       // Register interest
-      serverConnection.getAcceptor().getCacheClientNotifier().registerClientInterest(regionName, keys,
-          serverConnection.getProxyID(), isDurable, sendUpdatesAsInvalidates, false, 0, true);
+      serverConnection.getAcceptor().getCacheClientNotifier().registerClientInterest(regionName,
+          keys, serverConnection.getProxyID(), isDurable, sendUpdatesAsInvalidates, false, 0, true);
     } catch (Exception ex) {
       // If an interrupted exception is thrown , rethrow it
       checkForInterrupt(serverConnection, ex);
@@ -198,7 +199,7 @@ public class RegisterInterestList extends BaseCommand {
     // start = DistributionStats.getStatTime();
 
     boolean isPrimary = serverConnection.getAcceptor().getCacheClientNotifier()
-                                        .getClientProxy(serverConnection.getProxyID()).isPrimary();
+        .getClientProxy(serverConnection.getProxyID()).isPrimary();
     if (!isPrimary) {
       chunkedResponseMsg.setMessageType(MessageType.RESPONSE_FROM_SECONDARY);
       chunkedResponseMsg.setTransactionId(clientMessage.getTransactionId());
@@ -218,7 +219,8 @@ public class RegisterInterestList extends BaseCommand {
 
       // Send chunk response
       try {
-        fillAndSendRegisterInterestResponseChunks(region, keys, InterestType.KEY, policy, serverConnection);
+        fillAndSendRegisterInterestResponseChunks(region, keys, InterestType.KEY, policy,
+            serverConnection);
         serverConnection.setAsTrue(RESPONDED);
       } catch (Exception e) {
         // If an interrupted exception is thrown , rethrow it

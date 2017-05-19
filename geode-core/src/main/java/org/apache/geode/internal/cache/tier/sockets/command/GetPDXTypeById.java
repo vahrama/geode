@@ -40,8 +40,9 @@ public class GetPDXTypeById extends BaseCommand {
       throws IOException, ClassNotFoundException {
     serverConnection.setAsTrue(REQUIRES_RESPONSE);
     if (logger.isDebugEnabled()) {
-      logger.debug("{}: Received get pdx type by id request ({} parts) from {}", serverConnection.getName(),
-          clientMessage.getNumberOfParts(), serverConnection.getSocketString());
+      logger.debug("{}: Received get pdx type by id request ({} parts) from {}",
+          serverConnection.getName(), clientMessage.getNumberOfParts(),
+          serverConnection.getSocketString());
     }
     int pdxId = clientMessage.getPart(0).getInt();
 

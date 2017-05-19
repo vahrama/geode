@@ -158,8 +158,9 @@ public class Destroy65 extends BaseCommand {
     if (logger.isDebugEnabled()) {
       logger.debug(
           "{}: Received destroy65 request ({} bytes; op={}) from {} for region {} key {}{} txId {}",
-          serverConnection.getName(), clientMessage.getPayloadLength(), operation, serverConnection.getSocketString(),
-          regionName, key, (operation == Operation.REMOVE ? " value=" + expectedOldValue : ""),
+          serverConnection.getName(), clientMessage.getPayloadLength(), operation,
+          serverConnection.getSocketString(), regionName, key,
+          (operation == Operation.REMOVE ? " value=" + expectedOldValue : ""),
           clientMessage.getTransactionId());
     }
     boolean entryNotFoundForRemove = false;
@@ -181,7 +182,8 @@ public class Destroy65 extends BaseCommand {
             .append(LocalizedStrings.Destroy__THE_INPUT_REGION_NAME_FOR_THE_DESTROY_REQUEST_IS_NULL
                 .toLocalizedString());
       }
-      writeErrorResponse(clientMessage, MessageType.DESTROY_DATA_ERROR, errMessage.toString(), serverConnection);
+      writeErrorResponse(clientMessage, MessageType.DESTROY_DATA_ERROR, errMessage.toString(),
+          serverConnection);
       serverConnection.setAsTrue(RESPONDED);
       return;
     }
@@ -199,7 +201,8 @@ public class Destroy65 extends BaseCommand {
     ByteBuffer eventIdPartsBuffer = ByteBuffer.wrap(eventPart.getSerializedForm());
     long threadId = EventID.readEventIdPartsFromOptmizedByteArray(eventIdPartsBuffer);
     long sequenceId = EventID.readEventIdPartsFromOptmizedByteArray(eventIdPartsBuffer);
-    EventID eventId = new EventID(serverConnection.getEventMemberIDByteArray(), threadId, sequenceId);
+    EventID eventId =
+        new EventID(serverConnection.getEventMemberIDByteArray(), threadId, sequenceId);
     EventIDHolder clientEvent = new EventIDHolder(eventId);
 
     Breadcrumbs.setEventId(eventId);
@@ -236,7 +239,8 @@ public class Destroy65 extends BaseCommand {
         }
       }
       if (operation == null || operation == Operation.DESTROY) {
-        region.basicBridgeDestroy(key, callbackArg, serverConnection.getProxyID(), true, clientEvent);
+        region.basicBridgeDestroy(key, callbackArg, serverConnection.getProxyID(), true,
+            clientEvent);
       } else {
         // this throws exceptions if expectedOldValue checks fail
         try {
@@ -254,15 +258,15 @@ public class Destroy65 extends BaseCommand {
             }
             // try the operation anyway to ensure that it's been distributed to all servers
             try {
-              region.basicBridgeRemove(key, expectedOldValue, callbackArg, serverConnection.getProxyID(),
-                  true, clientEvent);
+              region.basicBridgeRemove(key, expectedOldValue, callbackArg,
+                  serverConnection.getProxyID(), true, clientEvent);
             } catch (EntryNotFoundException e) {
               // ignore, and don't set entryNotFoundForRemove because this was a successful
               // operation - bug #51664
             }
           } else {
-            region.basicBridgeRemove(key, expectedOldValue, callbackArg, serverConnection.getProxyID(),
-                true, clientEvent);
+            region.basicBridgeRemove(key, expectedOldValue, callbackArg,
+                serverConnection.getProxyID(), true, clientEvent);
             if (logger.isDebugEnabled()) {
               logger.debug("region.remove succeeded");
             }
@@ -281,7 +285,7 @@ public class Destroy65 extends BaseCommand {
       // exception happens. Just log it and continue.
       logger.info(LocalizedMessage.create(
           LocalizedStrings.Destroy_0_DURING_ENTRY_DESTROY_NO_ENTRY_WAS_FOUND_FOR_KEY_1,
-          new Object[] { serverConnection.getName(), key}));
+          new Object[] {serverConnection.getName(), key}));
       entryNotFoundForRemove = true;
     } catch (RegionDestroyedException rde) {
       writeException(clientMessage, rde, false, serverConnection);
@@ -318,17 +322,19 @@ public class Destroy65 extends BaseCommand {
             pr.getNetworkHopType(), clientEvent.getVersionTag());
         pr.clearNetworkHopData();
       } else {
-        writeReply(clientMessage, serverConnection, entryNotFoundForRemove | clientEvent.getIsRedestroyedEntry(),
+        writeReply(clientMessage, serverConnection,
+            entryNotFoundForRemove | clientEvent.getIsRedestroyedEntry(),
             clientEvent.getVersionTag());
       }
     } else {
-      writeReply(clientMessage, serverConnection, entryNotFoundForRemove | clientEvent.getIsRedestroyedEntry(),
+      writeReply(clientMessage, serverConnection,
+          entryNotFoundForRemove | clientEvent.getIsRedestroyedEntry(),
           clientEvent.getVersionTag());
     }
     serverConnection.setAsTrue(RESPONDED);
     if (logger.isDebugEnabled()) {
-      logger.debug("{}: Sent destroy response for region {} key {}", serverConnection.getName(), regionName,
-          key);
+      logger.debug("{}: Sent destroy response for region {} key {}", serverConnection.getName(),
+          regionName, key);
     }
     stats.incWriteDestroyResponseTime(DistributionStats.getStatTime() - start);
 

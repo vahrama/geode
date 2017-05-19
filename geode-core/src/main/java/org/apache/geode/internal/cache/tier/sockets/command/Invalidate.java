@@ -87,9 +87,9 @@ public class Invalidate extends BaseCommand {
       return;
     }
     if (logger.isDebugEnabled()) {
-      logger.debug(serverConnection.getName() + ": Received invalidate request (" + clientMessage.getPayloadLength()
-                   + " bytes) from " + serverConnection.getSocketString() + " for region " + regionName + " key "
-                   + key);
+      logger.debug(serverConnection.getName() + ": Received invalidate request ("
+          + clientMessage.getPayloadLength() + " bytes) from " + serverConnection.getSocketString()
+          + " for region " + regionName + " key " + key);
     }
 
     // Process the invalidate request
@@ -108,7 +108,8 @@ public class Invalidate extends BaseCommand {
             .append(LocalizedStrings.BaseCommand__THE_INPUT_REGION_NAME_FOR_THE_0_REQUEST_IS_NULL
                 .toLocalizedString("invalidate"));
       }
-      writeErrorResponse(clientMessage, MessageType.DESTROY_DATA_ERROR, errMessage.toString(), serverConnection);
+      writeErrorResponse(clientMessage, MessageType.DESTROY_DATA_ERROR, errMessage.toString(),
+          serverConnection);
       serverConnection.setAsTrue(RESPONDED);
       return;
     }
@@ -124,7 +125,8 @@ public class Invalidate extends BaseCommand {
     ByteBuffer eventIdPartsBuffer = ByteBuffer.wrap(eventPart.getSerializedForm());
     long threadId = EventID.readEventIdPartsFromOptmizedByteArray(eventIdPartsBuffer);
     long sequenceId = EventID.readEventIdPartsFromOptmizedByteArray(eventIdPartsBuffer);
-    EventID eventId = new EventID(serverConnection.getEventMemberIDByteArray(), threadId, sequenceId);
+    EventID eventId =
+        new EventID(serverConnection.getEventMemberIDByteArray(), threadId, sequenceId);
 
     Breadcrumbs.setEventId(eventId);
 
@@ -157,7 +159,8 @@ public class Invalidate extends BaseCommand {
         }
       }
 
-      region.basicBridgeInvalidate(key, callbackArg, serverConnection.getProxyID(), true, clientEvent);
+      region.basicBridgeInvalidate(key, callbackArg, serverConnection.getProxyID(), true,
+          clientEvent);
       tag = clientEvent.getVersionTag();
       serverConnection.setModificationInfo(true, regionName, key);
     } catch (EntryNotFoundException e) {
@@ -199,7 +202,8 @@ public class Invalidate extends BaseCommand {
     if (region instanceof PartitionedRegion) {
       PartitionedRegion pr = (PartitionedRegion) region;
       if (pr.getNetworkHopType() != PartitionedRegion.NETWORK_HOP_NONE) {
-        writeReplyWithRefreshMetadata(clientMessage, serverConnection, pr, pr.getNetworkHopType(), tag);
+        writeReplyWithRefreshMetadata(clientMessage, serverConnection, pr, pr.getNetworkHopType(),
+            tag);
         pr.clearNetworkHopData();
       } else {
         writeReply(clientMessage, serverConnection, tag);
