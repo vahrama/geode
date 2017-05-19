@@ -58,7 +58,8 @@ public class GetClientPRMetadataCommand66 extends BaseCommand {
           .create(LocalizedStrings.GetClientPRMetadata_THE_INPUT_REGION_PATH_IS_NULL));
       errMessage =
           LocalizedStrings.GetClientPRMetadata_THE_INPUT_REGION_PATH_IS_NULL.toLocalizedString();
-      writeErrorResponse(clientMessage, MessageType.GET_CLIENT_PR_METADATA_ERROR, errMessage.toString(), serverConnection);
+      writeErrorResponse(clientMessage, MessageType.GET_CLIENT_PR_METADATA_ERROR,
+          errMessage.toString(), serverConnection);
       serverConnection.setAsTrue(RESPONDED);
     } else {
       Region region = crHelper.getRegion(regionFullPath);
@@ -68,7 +69,8 @@ public class GetClientPRMetadataCommand66 extends BaseCommand {
             regionFullPath));
         errMessage = LocalizedStrings.GetClientPRMetadata_REGION_NOT_FOUND.toLocalizedString()
             + regionFullPath;
-        writeErrorResponse(clientMessage, MessageType.GET_CLIENT_PR_METADATA_ERROR, errMessage.toString(), serverConnection);
+        writeErrorResponse(clientMessage, MessageType.GET_CLIENT_PR_METADATA_ERROR,
+            errMessage.toString(), serverConnection);
         serverConnection.setAsTrue(RESPONDED);
       } else {
         try {

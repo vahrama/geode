@@ -53,7 +53,7 @@ public class RemoveUserAuth extends BaseCommand {
     } catch (GemFireSecurityException gfse) {
       if (serverConnection.getSecurityLogWriter().warningEnabled()) {
         serverConnection.getSecurityLogWriter().warning(LocalizedStrings.ONE_ARG,
-          serverConnection.getName() + ": Security exception: " + gfse.getMessage());
+            serverConnection.getName() + ": Security exception: " + gfse.getMessage());
       }
       writeException(clientMessage, gfse, false, serverConnection);
     } catch (Exception ex) {
@@ -61,7 +61,7 @@ public class RemoveUserAuth extends BaseCommand {
       if (serverConnection.getLogWriter().warningEnabled()) {
         serverConnection.getLogWriter().warning(
             LocalizedStrings.CacheClientNotifier_AN_EXCEPTION_WAS_THROWN_FOR_CLIENT_0_1,
-            new Object[] { serverConnection.getProxyID(), ""}, ex);
+            new Object[] {serverConnection.getProxyID(), ""}, ex);
       }
       writeException(clientMessage, ex, false, serverConnection);
     } finally {

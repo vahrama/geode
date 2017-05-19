@@ -62,7 +62,8 @@ public class ExecuteRegionFunctionSingleHop extends BaseCommand {
   private ExecuteRegionFunctionSingleHop() {}
 
   @Override
-  public void cmdExecute(Message clientMessage, ServerConnection servConn, long start) throws IOException {
+  public void cmdExecute(Message clientMessage, ServerConnection servConn, long start)
+      throws IOException {
 
     String regionName = null;
     Object function = null;

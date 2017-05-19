@@ -36,7 +36,8 @@ public class GetCQStats extends BaseCQCommand {
   private GetCQStats() {}
 
   @Override
-  public void cmdExecute(Message clientMessage, ServerConnection serverConnection, long start) throws IOException {
+  public void cmdExecute(Message clientMessage, ServerConnection serverConnection, long start)
+      throws IOException {
     CachedRegionHelper crHelper = serverConnection.getCachedRegionHelper();
 
     CacheServerStats stats = serverConnection.getCacheServerStats();
@@ -61,7 +62,8 @@ public class GetCQStats extends BaseCQCommand {
     // Process the query request
     if (cqName == null) {
       String err = "The cqName for the cq stats request is null";
-      sendCqResponse(MessageType.CQDATAERROR_MSG_TYPE, err, clientMessage.getTransactionId(), null, serverConnection);
+      sendCqResponse(MessageType.CQDATAERROR_MSG_TYPE, err, clientMessage.getTransactionId(), null,
+          serverConnection);
       return;
     }
 
@@ -74,11 +76,13 @@ public class GetCQStats extends BaseCQCommand {
       cqService.start();
     } catch (Exception e) {
       String err = "Exception while Getting the CQ Statistics. ";
-      sendCqResponse(MessageType.CQ_EXCEPTION_TYPE, err, clientMessage.getTransactionId(), e, serverConnection);
+      sendCqResponse(MessageType.CQ_EXCEPTION_TYPE, err, clientMessage.getTransactionId(), e,
+          serverConnection);
       return;
     }
     // Send OK to client
-    sendCqResponse(MessageType.REPLY, "cq stats sent successfully.", clientMessage.getTransactionId(), null, serverConnection);
+    sendCqResponse(MessageType.REPLY, "cq stats sent successfully.",
+        clientMessage.getTransactionId(), null, serverConnection);
     serverConnection.setAsTrue(RESPONDED);
 
     {

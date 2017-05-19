@@ -88,7 +88,8 @@ public class Query extends BaseCommandQuery {
         }
       }
 
-      processQuery(clientMessage, query, queryString, regionNames, start, null, queryContext, serverConnection, true);
+      processQuery(clientMessage, query, queryString, regionNames, start, null, queryContext,
+          serverConnection, true);
     } catch (QueryInvalidException e) {
       throw new QueryInvalidException(e.getMessage() + queryString);
     } catch (QueryExecutionLowMemoryException e) {

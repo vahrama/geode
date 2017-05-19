@@ -35,7 +35,8 @@ public class ClientReady extends BaseCommand {
   private ClientReady() {}
 
   @Override
-  public void cmdExecute(Message clientMessage, ServerConnection serverConnection, long start) throws IOException {
+  public void cmdExecute(Message clientMessage, ServerConnection serverConnection, long start)
+      throws IOException {
     CacheServerStats stats = serverConnection.getCacheServerStats();
     {
       long oldStart = start;
@@ -47,11 +48,12 @@ public class ClientReady extends BaseCommand {
       int clientPort = serverConnection.getSocketPort();
       if (logger.isDebugEnabled()) {
         logger.debug("{}: Received client ready request ({} bytes) from {} on {}:{}",
-            serverConnection.getName(), clientMessage.getPayloadLength(), serverConnection.getProxyID(), clientHost,
-            clientPort);
+            serverConnection.getName(), clientMessage.getPayloadLength(),
+            serverConnection.getProxyID(), clientHost, clientPort);
       }
 
-      serverConnection.getAcceptor().getCacheClientNotifier().readyForEvents(serverConnection.getProxyID());
+      serverConnection.getAcceptor().getCacheClientNotifier()
+          .readyForEvents(serverConnection.getProxyID());
 
       long oldStart = start;
       start = DistributionStats.getStatTime();
@@ -62,7 +64,7 @@ public class ClientReady extends BaseCommand {
 
       if (logger.isDebugEnabled()) {
         logger.debug(serverConnection.getName() + ": Processed client ready request from "
-                     + serverConnection.getProxyID() + " on " + clientHost + ":" + clientPort);
+            + serverConnection.getProxyID() + " on " + clientHost + ":" + clientPort);
       }
     } finally {
       stats.incWriteClientReadyResponseTime(DistributionStats.getStatTime() - start);

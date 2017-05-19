@@ -89,7 +89,8 @@ public class DestroyRegion extends BaseCommand {
     regionName = regionNamePart.getString();
     if (logger.isDebugEnabled()) {
       logger.debug("{}: Received destroy region request ({} bytes) from {} for region {}",
-          serverConnection.getName(), clientMessage.getPayloadLength(), serverConnection.getSocketString(), regionName);
+          serverConnection.getName(), clientMessage.getPayloadLength(),
+          serverConnection.getSocketString(), regionName);
     }
 
     // Process the destroy region request
@@ -101,7 +102,8 @@ public class DestroyRegion extends BaseCommand {
           LocalizedStrings.DestroyRegion__THE_INPUT_REGION_NAME_FOR_THE_DESTROY_REGION_REQUEST_IS_NULL
               .toLocalizedString());
 
-      writeErrorResponse(clientMessage, MessageType.DESTROY_REGION_DATA_ERROR, errMessage.toString(), serverConnection);
+      writeErrorResponse(clientMessage, MessageType.DESTROY_REGION_DATA_ERROR,
+          errMessage.toString(), serverConnection);
       serverConnection.setAsTrue(RESPONDED);
       return;
     }
@@ -120,7 +122,8 @@ public class DestroyRegion extends BaseCommand {
     ByteBuffer eventIdPartsBuffer = ByteBuffer.wrap(eventPart.getSerializedForm());
     long threadId = EventID.readEventIdPartsFromOptmizedByteArray(eventIdPartsBuffer);
     long sequenceId = EventID.readEventIdPartsFromOptmizedByteArray(eventIdPartsBuffer);
-    EventID eventId = new EventID(serverConnection.getEventMemberIDByteArray(), threadId, sequenceId);
+    EventID eventId =
+        new EventID(serverConnection.getEventMemberIDByteArray(), threadId, sequenceId);
 
     try {
       // user needs to have data:manage on all regions in order to destory a particular region
@@ -138,7 +141,7 @@ public class DestroyRegion extends BaseCommand {
     } catch (DistributedSystemDisconnectedException e) {
       // FIXME better exception hierarchy would avoid this check
       if (serverConnection.getCachedRegionHelper().getCache().getCancelCriterion()
-                          .cancelInProgress() != null) {
+          .cancelInProgress() != null) {
         if (logger.isDebugEnabled()) {
           logger.debug(
               "{} ignoring message of type {} from client {} because shutdown occurred during message processing.",

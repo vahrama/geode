@@ -95,8 +95,8 @@ public class UnregisterInterestList extends BaseCommand {
     if (logger.isDebugEnabled()) {
       logger.debug(
           "{}: Received unregister interest request ({} bytes) from {} for the following {} keys in region {}: {}",
-          serverConnection.getName(), clientMessage.getPayloadLength(), serverConnection.getSocketString(), numberOfKeys,
-          regionName, keys);
+          serverConnection.getName(), clientMessage.getPayloadLength(),
+          serverConnection.getSocketString(), numberOfKeys, regionName, keys);
     }
 
     // Process the unregister interest request
@@ -114,7 +114,8 @@ public class UnregisterInterestList extends BaseCommand {
       }
       String s = errMessage.toLocalizedString();
       logger.warn("{}: {}", serverConnection.getName(), s);
-      writeErrorResponse(clientMessage, MessageType.UNREGISTER_INTEREST_DATA_ERROR, s, serverConnection);
+      writeErrorResponse(clientMessage, MessageType.UNREGISTER_INTEREST_DATA_ERROR, s,
+          serverConnection);
       serverConnection.setAsTrue(RESPONDED);
       return;
     }
@@ -155,8 +156,8 @@ public class UnregisterInterestList extends BaseCommand {
      * responded = true; } else {
      */
     // Register interest
-    serverConnection.getAcceptor().getCacheClientNotifier().unregisterClientInterest(regionName, keys,
-        isClosingList, serverConnection.getProxyID(), keepalive);
+    serverConnection.getAcceptor().getCacheClientNotifier().unregisterClientInterest(regionName,
+        keys, isClosingList, serverConnection.getProxyID(), keepalive);
 
     // Update the statistics and write the reply
     // bserverStats.incLong(processDestroyTimeId,

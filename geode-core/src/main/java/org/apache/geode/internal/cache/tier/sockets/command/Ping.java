@@ -39,11 +39,13 @@ public class Ping extends BaseCommand {
   private Ping() {}
 
   @Override
-  public void cmdExecute(Message clientMessage, ServerConnection serverConnection, long start) throws IOException {
+  public void cmdExecute(Message clientMessage, ServerConnection serverConnection, long start)
+      throws IOException {
     final boolean isDebugEnabled = logger.isDebugEnabled();
     if (isDebugEnabled) {
-      logger.debug("{}: rcv tx: {} from {} rcvTime: {}", serverConnection.getName(), clientMessage.getTransactionId(),
-          serverConnection.getSocketString(), (DistributionStats.getStatTime() - start));
+      logger.debug("{}: rcv tx: {} from {} rcvTime: {}", serverConnection.getName(),
+          clientMessage.getTransactionId(), serverConnection.getSocketString(),
+          (DistributionStats.getStatTime() - start));
     }
     ClientHealthMonitor chm = ClientHealthMonitor.getInstance();
     if (chm != null)
@@ -53,7 +55,8 @@ public class Ping extends BaseCommand {
     writeReply(clientMessage, serverConnection);
     serverConnection.setAsTrue(RESPONDED);
     if (isDebugEnabled) {
-      logger.debug("{}: Sent ping reply to {}", serverConnection.getName(), serverConnection.getSocketString());
+      logger.debug("{}: Sent ping reply to {}", serverConnection.getName(),
+          serverConnection.getSocketString());
     }
   }
 

@@ -82,9 +82,9 @@ public class ExecuteCQ61 extends BaseCQCommand {
     Part regionDataPolicyPart = clientMessage.getPart(clientMessage.getNumberOfParts() - 1);
     byte[] regionDataPolicyPartBytes = regionDataPolicyPart.getSerializedForm();
     if (logger.isDebugEnabled()) {
-      logger.debug("{}: Received {} request from {} CqName: {} queryString: {}", serverConnection.getName(),
-          MessageType.getString(clientMessage.getMessageType()), serverConnection.getSocketString(), cqName,
-          cqQueryString);
+      logger.debug("{}: Received {} request from {} CqName: {} queryString: {}",
+          serverConnection.getName(), MessageType.getString(clientMessage.getMessageType()),
+          serverConnection.getSocketString(), cqName, cqQueryString);
     }
 
     // Check if the Server is running in NotifyBySubscription=true mode.
@@ -96,7 +96,8 @@ public class ExecuteCQ61 extends BaseCQCommand {
         String err =
             LocalizedStrings.ExecuteCQ_SERVER_NOTIFYBYSUBSCRIPTION_MODE_IS_SET_TO_FALSE_CQ_EXECUTION_IS_NOT_SUPPORTED_IN_THIS_MODE
                 .toLocalizedString();
-        sendCqResponse(MessageType.CQDATAERROR_MSG_TYPE, err, clientMessage.getTransactionId(), null, serverConnection);
+        sendCqResponse(MessageType.CQDATAERROR_MSG_TYPE, err, clientMessage.getTransactionId(),
+            null, serverConnection);
         return;
       }
     }
@@ -144,7 +145,8 @@ public class ExecuteCQ61 extends BaseCQCommand {
       cqQuery = (ServerCQImpl) cqServiceForExec.executeCq(cqName, cqQueryString, cqState, id, ccn,
           isDurable, true, regionDataPolicyPartBytes[0], null);
     } catch (CqException cqe) {
-      sendCqResponse(MessageType.CQ_EXCEPTION_TYPE, "", clientMessage.getTransactionId(), cqe, serverConnection);
+      sendCqResponse(MessageType.CQ_EXCEPTION_TYPE, "", clientMessage.getTransactionId(), cqe,
+          serverConnection);
       serverConnection.removeCq(cqName, isDurable);
       return;
     } catch (Exception e) {
@@ -172,8 +174,8 @@ public class ExecuteCQ61 extends BaseCQCommand {
           cqRegionNames = ((DefaultQuery) query).getRegionsInQuery(null);
         }
         ((DefaultQuery) query).setIsCqQuery(true);
-        successQuery = processQuery(clientMessage, query, cqQueryString, cqRegionNames, start, cqQuery,
-            executeCQContext, serverConnection, sendResults);
+        successQuery = processQuery(clientMessage, query, cqQueryString, cqRegionNames, start,
+            cqQuery, executeCQContext, serverConnection, sendResults);
 
 
         // Update the CQ statistics.

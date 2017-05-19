@@ -37,8 +37,9 @@ public class PeriodicAck extends BaseCommand {
       throws IOException, ClassNotFoundException {
     serverConnection.setAsTrue(REQUIRES_RESPONSE);
     if (logger.isDebugEnabled()) {
-      logger.debug("{}: Received periodic ack request ({} bytes) from {}", serverConnection.getName(),
-          clientMessage.getPayloadLength(), serverConnection.getSocketString());
+      logger.debug("{}: Received periodic ack request ({} bytes) from {}",
+          serverConnection.getName(), clientMessage.getPayloadLength(),
+          serverConnection.getSocketString());
     }
     try {
       int numEvents = clientMessage.getNumberOfParts();

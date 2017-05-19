@@ -44,7 +44,8 @@ public class AddPdxType extends BaseCommand {
     serverConnection.setAsTrue(REQUIRES_RESPONSE);
     if (logger.isDebugEnabled()) {
       logger.debug("{}: Received get pdx id for type request ({} parts) from {}",
-          serverConnection.getName(), clientMessage.getNumberOfParts(), serverConnection.getSocketString());
+          serverConnection.getName(), clientMessage.getNumberOfParts(),
+          serverConnection.getSocketString());
     }
     int noOfParts = clientMessage.getNumberOfParts();
 

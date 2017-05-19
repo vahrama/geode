@@ -90,7 +90,8 @@ public class Destroy extends BaseCommand {
     }
     if (logger.isDebugEnabled()) {
       logger.debug("{}: Received destroy request ({} bytes) from {} for region {} key {}",
-          serverConnection.getName(), clientMessage.getPayloadLength(), serverConnection.getSocketString(), regionName, key);
+          serverConnection.getName(), clientMessage.getPayloadLength(),
+          serverConnection.getSocketString(), regionName, key);
     }
 
     // Process the destroy request
@@ -110,7 +111,8 @@ public class Destroy extends BaseCommand {
             .append(LocalizedStrings.Destroy__THE_INPUT_REGION_NAME_FOR_THE_DESTROY_REQUEST_IS_NULL
                 .toLocalizedString());
       }
-      writeErrorResponse(clientMessage, MessageType.DESTROY_DATA_ERROR, errMessage.toString(), serverConnection);
+      writeErrorResponse(clientMessage, MessageType.DESTROY_DATA_ERROR, errMessage.toString(),
+          serverConnection);
       serverConnection.setAsTrue(RESPONDED);
       return;
     }
@@ -128,7 +130,8 @@ public class Destroy extends BaseCommand {
     ByteBuffer eventIdPartsBuffer = ByteBuffer.wrap(eventPart.getSerializedForm());
     long threadId = EventID.readEventIdPartsFromOptmizedByteArray(eventIdPartsBuffer);
     long sequenceId = EventID.readEventIdPartsFromOptmizedByteArray(eventIdPartsBuffer);
-    EventID eventId = new EventID(serverConnection.getEventMemberIDByteArray(), threadId, sequenceId);
+    EventID eventId =
+        new EventID(serverConnection.getEventMemberIDByteArray(), threadId, sequenceId);
 
     try {
       // for integrated security
@@ -154,7 +157,7 @@ public class Destroy extends BaseCommand {
       // exception happens. Just log it and continue.
       logger.info(LocalizedMessage.create(
           LocalizedStrings.Destroy_0_DURING_ENTRY_DESTROY_NO_ENTRY_WAS_FOUND_FOR_KEY_1,
-          new Object[] { serverConnection.getName(), key}));
+          new Object[] {serverConnection.getName(), key}));
     } catch (RegionDestroyedException rde) {
       writeException(clientMessage, rde, false, serverConnection);
       serverConnection.setAsTrue(RESPONDED);
@@ -198,8 +201,8 @@ public class Destroy extends BaseCommand {
     }
     serverConnection.setAsTrue(RESPONDED);
     if (logger.isDebugEnabled()) {
-      logger.debug("{}: Sent destroy response for region {} key {}", serverConnection.getName(), regionName,
-          key);
+      logger.debug("{}: Sent destroy response for region {} key {}", serverConnection.getName(),
+          regionName, key);
     }
     stats.incWriteDestroyResponseTime(DistributionStats.getStatTime() - start);
   }
