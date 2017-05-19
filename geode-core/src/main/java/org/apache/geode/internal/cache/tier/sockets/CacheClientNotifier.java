@@ -17,9 +17,7 @@ package org.apache.geode.internal.cache.tier.sockets;
 import static org.apache.geode.distributed.ConfigurationProperties.*;
 
 import java.io.BufferedOutputStream;
-import java.io.DataInput;
 import java.io.DataInputStream;
-import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -70,12 +68,7 @@ import org.apache.geode.distributed.DistributedMember;
 import org.apache.geode.distributed.DistributedSystem;
 import org.apache.geode.distributed.internal.DM;
 import org.apache.geode.distributed.internal.DistributionConfig;
-import org.apache.geode.distributed.internal.DistributionManager;
-import org.apache.geode.distributed.internal.HighPriorityDistributionMessage;
 import org.apache.geode.distributed.internal.InternalDistributedSystem;
-import org.apache.geode.distributed.internal.MessageWithReply;
-import org.apache.geode.distributed.internal.ReplyMessage;
-import org.apache.geode.distributed.internal.ReplyProcessor21;
 import org.apache.geode.internal.ClassLoadUtil;
 import org.apache.geode.internal.cache.InternalCache;
 import org.apache.geode.internal.statistics.DummyStatisticsFactory;
@@ -127,6 +120,22 @@ import org.apache.geode.security.AuthenticationRequiredException;
 public class CacheClientNotifier {
   private static final Logger logger = LogService.getLogger();
 
+  /**
+   * The size of the server-to-client communication socket buffers. This can be modified using the
+   * BridgeServer.SOCKET_BUFFER_SIZE system property.
+   */
+  private static final int socketBufferSize =
+    Integer.getInteger("BridgeServer.SOCKET_BUFFER_SIZE", 32768);
+
+  private static final long CLIENT_PING_TASK_PERIOD =
+    Long.getLong(DistributionConfig.GEMFIRE_PREFIX + "serverToClientPingPeriod", 60000);
+
+  /**
+   * package-private to avoid synthetic accessor
+   */
+  static final long CLIENT_PING_TASK_COUNTER =
+    Long.getLong(DistributionConfig.GEMFIRE_PREFIX + "serverToClientPingCounter", 3);
+
   private static volatile CacheClientNotifier ccnSingleton;
 
   /**
@@ -149,20 +158,6 @@ public class CacheClientNotifier {
 
   private final Set<ClientProxyMembershipID> timedOutDurableClientProxies = new HashSet<>();
 
-  /**
-   * The GemFire {@code InternalCache}. Note that since this is a singleton class you should not use
-   * a direct reference to cache in CacheClientNotifier code. Instead, you should always use
-   * {@code getCache()}
-   */
-  private InternalCache cache; // TODO: fix synchronization of cache
-
-  private InternalLogWriter logWriter;
-
-  /**
-   * The GemFire security {@code LogWriter}
-   */
-  private InternalLogWriter securityLogWriter;
-
   /** the maximum number of messages that can be enqueued in a client-queue. */
   private final int maximumMessageCount;
 
@@ -179,24 +174,9 @@ public class CacheClientNotifier {
   private final CacheServerStats acceptorStats;
 
   /**
-   * haContainer can hold either the name of the client-messages-region (in case of eviction
-   * policies "mem" or "entry") or an instance of HashMap (in case of eviction policy "none"). In
-   * both the cases, it'll store HAEventWrapper as its key and ClientUpdateMessage as its value.
-   */
-  private volatile HAContainerWrapper haContainer;
-
-  /**
-   * The size of the server-to-client communication socket buffers. This can be modified using the
-   * BridgeServer.SOCKET_BUFFER_SIZE system property.
-   */
-  private static final int socketBufferSize =
-      Integer.getInteger("BridgeServer.SOCKET_BUFFER_SIZE", 32768);
-
-  /**
    * The statistics for this notifier
    */
-  final CacheClientNotifierStats statistics; // TODO: pass statistics into CacheClientProxy then
-                                             // make private
+  final CacheClientNotifierStats statistics; // TODO: pass statistics into CacheClientProxy
 
   /**
    * The {@code InterestRegistrationListener} instances registered in this VM. This is used when
@@ -209,55 +189,41 @@ public class CacheClientNotifier {
    * provide a read-only {@code Set} of listeners.
    */
   private final Set readableInterestRegistrationListeners =
-      Collections.unmodifiableSet(this.writableInterestRegistrationListeners);
-
-  /**
-   * System property name for indicating how much frequently the "Queue full" message should be
-   * logged.
-   */
-  private static final String MAX_QUEUE_LOG_FREQUENCY =
-      DistributionConfig.GEMFIRE_PREFIX + "logFrequency.clientQueueReachedMaxLimit";
-
-  public static final long DEFAULT_LOG_FREQUENCY = 1000;
-
-  private static final String EVENT_ENQUEUE_WAIT_TIME_NAME =
-      DistributionConfig.GEMFIRE_PREFIX + "subscription.EVENT_ENQUEUE_WAIT_TIME";
-
-  private static final int DEFAULT_EVENT_ENQUEUE_WAIT_TIME = 100;
-
-  /**
-   * System property value denoting the time in milliseconds. Any thread putting an event into a
-   * subscription queue, which is full, will wait this much time for the queue to make space. It'll
-   * then enque the event possibly causing the queue to grow beyond its capacity/max-size. See
-   * #51400.
-   */
-  public static int eventEnqueueWaitTime; // TODO: encapsulate eventEnqueueWaitTime
-
-  /**
-   * The frequency of logging the "Queue full" message.
-   */
-  private long logFrequency = DEFAULT_LOG_FREQUENCY;
+    Collections.unmodifiableSet(this.writableInterestRegistrationListeners);
 
   private final Map<String, DefaultQuery> compiledQueries = new ConcurrentHashMap<>();
 
-  private volatile boolean isCompiledQueryCleanupThreadStarted = false;
-
   private final Object lockIsCompiledQueryCleanupThreadStarted = new Object();
-
-  private SystemTimer.SystemTimerTask clientPingTask; // TODO: fix synchronization of clientPingTask
 
   private final SocketCloser socketCloser;
 
-  private static final long CLIENT_PING_TASK_PERIOD =
-      Long.getLong(DistributionConfig.GEMFIRE_PREFIX + "serverToClientPingPeriod", 60000);
+  /** package-private to avoid synthetic accessor */
+  final Set blackListedClients = new CopyOnWriteArraySet();
 
   /**
-   * package-private to avoid synthetic accessor
+   * haContainer can hold either the name of the client-messages-region (in case of eviction
+   * policies "mem" or "entry") or an instance of HashMap (in case of eviction policy "none"). In
+   * both the cases, it'll store HAEventWrapper as its key and ClientUpdateMessage as its value.
    */
-  static final long CLIENT_PING_TASK_COUNTER =
-      Long.getLong(DistributionConfig.GEMFIRE_PREFIX + "serverToClientPingCounter", 3);
+  private volatile HAContainerWrapper haContainer;
 
-  private final Set blackListedClients = new CopyOnWriteArraySet();
+  private volatile boolean isCompiledQueryCleanupThreadStarted = false;
+
+  /**
+   * The GemFire {@code InternalCache}. Note that since this is a singleton class you should not use
+   * a direct reference to cache in CacheClientNotifier code. Instead, you should always use
+   * {@code getCache()}
+   */
+  private InternalCache cache; // TODO: fix synchronization of cache
+
+  private InternalLogWriter logWriter;
+
+  /**
+   * The GemFire security {@code LogWriter}
+   */
+  private InternalLogWriter securityLogWriter;
+
+  private SystemTimer.SystemTimerTask clientPingTask; // TODO: fix synchronization of clientPingTask
 
   /**
    * Factory method to construct a CacheClientNotifier {@code CacheClientNotifier} instance.
@@ -318,21 +284,6 @@ public class CacheClientNotifier {
       factory = getCache().getDistributedSystem();
     }
     this.statistics = new CacheClientNotifierStats(factory);
-
-    try {
-      this.logFrequency = Long.valueOf(System.getProperty(MAX_QUEUE_LOG_FREQUENCY));
-      if (this.logFrequency <= 0) {
-        this.logFrequency = DEFAULT_LOG_FREQUENCY;
-      }
-    } catch (Exception e) {
-      this.logFrequency = DEFAULT_LOG_FREQUENCY;
-    }
-
-    eventEnqueueWaitTime =
-        Integer.getInteger(EVENT_ENQUEUE_WAIT_TIME_NAME, DEFAULT_EVENT_ENQUEUE_WAIT_TIME);
-    if (eventEnqueueWaitTime < 0) {
-      eventEnqueueWaitTime = DEFAULT_EVENT_ENQUEUE_WAIT_TIME;
-    }
 
     // Schedule task to periodically ping clients.
     scheduleClientPingTask();
@@ -923,7 +874,7 @@ public class CacheClientNotifier {
    * in it that determines which clients will receive the event.
    */
   public static void notifyClients(InternalCacheEvent event) {
-    CacheClientNotifier instance = ccnSingleton;
+    CacheClientNotifier instance = getInstance();
     if (instance != null) {
       instance.singletonNotifyClients(event, null);
     }
@@ -935,7 +886,7 @@ public class CacheClientNotifier {
    */
   public static void notifyClients(InternalCacheEvent event,
       ClientUpdateMessage clientUpdateMessage) {
-    CacheClientNotifier instance = ccnSingleton;
+    CacheClientNotifier instance = getInstance();
     if (instance != null) {
       instance.singletonNotifyClients(event, clientUpdateMessage);
     }
@@ -1094,7 +1045,7 @@ public class CacheClientNotifier {
    * interest established, or override the isClientInterested method to implement its own routing
    */
   public static void routeClientMessage(Conflatable clientMessage) {
-    CacheClientNotifier instance = ccnSingleton;
+    CacheClientNotifier instance = getInstance();
     if (instance != null) {
       // ok to use keySet here because all we do is call getClientProxy with these keys
       instance.singletonRouteClientMessage(clientMessage, instance.clientProxies.keySet());
@@ -1106,7 +1057,7 @@ public class CacheClientNotifier {
    */
   static void routeSingleClientMessage(ClientUpdateMessage clientMessage,
       ClientProxyMembershipID clientProxyMembershipId) {
-    CacheClientNotifier instance = ccnSingleton;
+    CacheClientNotifier instance = getInstance();
     if (instance != null) {
       instance.singletonRouteClientMessage(clientMessage,
           Collections.singleton(clientProxyMembershipId));
@@ -1589,7 +1540,7 @@ public class CacheClientNotifier {
       }
     }
 
-    if (noActiveServer() && ccnSingleton != null) {
+    if (noActiveServer() && getInstance() != null) {
       ccnSingleton = null;
       if (this.haContainer != null) {
         this.haContainer.cleanUp();
@@ -1814,7 +1765,7 @@ public class CacheClientNotifier {
   /**
    * Shuts down durable client proxy
    */
-  public boolean closeDurableClientProxy(String durableClientId) throws CacheException {
+  public boolean closeDurableClientProxy(String durableClientId) {
     CacheClientProxy ccp = getClientProxy(durableClientId);
     if (ccp == null) {
       return false;
@@ -1828,8 +1779,7 @@ public class CacheClientNotifier {
       if (logger.isDebugEnabled()) {
         logger.debug("Cannot close running durable client: {}", durableClientId);
       }
-      // TODO: never throw an anonymous inner class
-      throw new CacheException("Cannot close a running durable client : " + durableClientId) {};
+      throw new IllegalStateException("Cannot close a running durable client : " + durableClientId);
     }
   }
 
@@ -2114,10 +2064,6 @@ public class CacheClientNotifier {
         CLIENT_PING_TASK_PERIOD, CLIENT_PING_TASK_PERIOD);
   }
 
-  public long getLogFrequency() {
-    return this.logFrequency;
-  }
-
   /**
    * @return the haContainer
    */
@@ -2182,93 +2128,4 @@ public class CacheClientNotifier {
     }
   }
 
-  /**
-   * Static inner-class ServerInterestRegistrationMessage
-   * <p>
-   * this message is used to send interest registration to another server. Since interest
-   * registration performs a state-flush operation this message must not transmitted on an ordered
-   * socket
-   */
-  public static class ServerInterestRegistrationMessage extends HighPriorityDistributionMessage
-      implements MessageWithReply {
-
-    ClientProxyMembershipID clientId;
-    ClientInterestMessageImpl clientMessage;
-    int processorId;
-
-    ServerInterestRegistrationMessage(ClientProxyMembershipID clientID,
-        ClientInterestMessageImpl msg) {
-      this.clientId = clientID;
-      this.clientMessage = msg;
-    }
-
-    public ServerInterestRegistrationMessage() {
-      // nothing
-    }
-
-    static void sendInterestChange(DM dm, ClientProxyMembershipID clientID,
-        ClientInterestMessageImpl msg) {
-      ServerInterestRegistrationMessage registrationMessage =
-          new ServerInterestRegistrationMessage(clientID, msg);
-      Set recipients = dm.getOtherDistributionManagerIds();
-      registrationMessage.setRecipients(recipients);
-      ReplyProcessor21 rp = new ReplyProcessor21(dm, recipients);
-      registrationMessage.processorId = rp.getProcessorId();
-      dm.putOutgoing(registrationMessage);
-      try {
-        rp.waitForReplies();
-      } catch (InterruptedException ignore) {
-        Thread.currentThread().interrupt();
-      }
-    }
-
-    @Override
-    protected void process(DistributionManager dm) {
-      // Get the proxy for the proxy id
-      try {
-        CacheClientNotifier clientNotifier = CacheClientNotifier.getInstance();
-        if (clientNotifier != null) {
-          CacheClientProxy proxy = clientNotifier.getClientProxy(this.clientId);
-          // If this VM contains a proxy for the requested proxy id, forward the
-          // message on to the proxy for processing
-          if (proxy != null) {
-            proxy.processInterestMessage(this.clientMessage);
-          }
-        }
-      } finally {
-        ReplyMessage reply = new ReplyMessage();
-        reply.setProcessorId(this.processorId);
-        reply.setRecipient(getSender());
-        try {
-          dm.putOutgoing(reply);
-        } catch (CancelException ignore) {
-          // can't send a reply, so ignore the exception
-        }
-      }
-    }
-
-    @Override
-    public int getDSFID() {
-      return SERVER_INTEREST_REGISTRATION_MESSAGE;
-    }
-
-    @Override
-    public void toData(DataOutput out) throws IOException {
-      super.toData(out);
-      out.writeInt(this.processorId);
-      InternalDataSerializer.invokeToData(this.clientId, out);
-      InternalDataSerializer.invokeToData(this.clientMessage, out);
-    }
-
-    @Override
-    public void fromData(DataInput in) throws IOException, ClassNotFoundException {
-      super.fromData(in);
-      this.processorId = in.readInt();
-      this.clientId = new ClientProxyMembershipID();
-      InternalDataSerializer.invokeFromData(this.clientId, in);
-      this.clientMessage = new ClientInterestMessageImpl();
-      InternalDataSerializer.invokeFromData(this.clientMessage, in);
-    }
-  }
 }
-
