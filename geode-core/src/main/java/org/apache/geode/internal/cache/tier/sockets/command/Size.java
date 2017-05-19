@@ -76,7 +76,8 @@ public class Size extends BaseCommand {
       errMessage
           .append(LocalizedStrings.BaseCommand__THE_INPUT_REGION_NAME_FOR_THE_0_REQUEST_IS_NULL
               .toLocalizedString("size"));
-      writeErrorResponse(clientMessage, MessageType.SIZE_ERROR, errMessage.toString(), serverConnection);
+      writeErrorResponse(clientMessage, MessageType.SIZE_ERROR, errMessage.toString(),
+          serverConnection);
       serverConnection.setAsTrue(RESPONDED);
       return;
     }
@@ -114,7 +115,8 @@ public class Size extends BaseCommand {
       }
     } finally {
       if (logger.isDebugEnabled()) {
-        logger.debug("{}: Sent size response for region {}", serverConnection.getName(), regionName);
+        logger.debug("{}: Sent size response for region {}", serverConnection.getName(),
+            regionName);
       }
       serverConnection.setAsTrue(RESPONDED);
       stats.incWriteSizeResponseTime(DistributionStats.getStatTime() - start);

@@ -34,7 +34,8 @@ public class GetFunctionAttribute extends BaseCommand {
   }
 
   @Override
-  public void cmdExecute(Message clientMessage, ServerConnection serverConnection, long start) throws IOException {
+  public void cmdExecute(Message clientMessage, ServerConnection serverConnection, long start)
+      throws IOException {
     serverConnection.setAsTrue(REQUIRES_RESPONSE);
     String functionId = clientMessage.getPart(0).getString();
     if (functionId == null) {

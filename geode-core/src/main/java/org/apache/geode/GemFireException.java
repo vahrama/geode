@@ -19,8 +19,7 @@ package org.apache.geode;
  * GemFire.
  * <p>
  * Since these exceptions are unchecked, this class really <em>ought</em> to be called
- * {@code GemFireRuntimeException}; however, the current name is retained for compatibility's
- * sake.
+ * {@code GemFireRuntimeException}; however, the current name is retained for compatibility's sake.
  * <p>
  * This class is abstract to enforce throwing more specific exception types. Please avoid using
  * GemFireException to describe an arbitrary error condition
@@ -60,8 +59,8 @@ public abstract class GemFireException extends RuntimeException {
   }
 
   /**
-   * Returns the root cause of this {@code GemFireException} or {@code null} if the cause
-   * is nonexistent or unknown.
+   * Returns the root cause of this {@code GemFireException} or {@code null} if the cause is
+   * nonexistent or unknown.
    */
   public Throwable getRootCause() {
     if (this.getCause() == null) {

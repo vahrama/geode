@@ -53,7 +53,8 @@ public class TXSynchronizationCommand extends BaseCommand {
    * org.apache.geode.internal.cache.tier.sockets.ServerConnection)
    */
   @Override
-  protected boolean shouldMasqueradeForTx(Message clientMessage, ServerConnection serverConnection) {
+  protected boolean shouldMasqueradeForTx(Message clientMessage,
+      ServerConnection serverConnection) {
     // masquerading is done in the waiting thread pool
     return false;
   }
@@ -67,13 +68,14 @@ public class TXSynchronizationCommand extends BaseCommand {
    * long)
    */
   @Override
-  public void cmdExecute(final Message clientMessage, final ServerConnection serverConnection, long start)
-      throws IOException, ClassNotFoundException, InterruptedException {
+  public void cmdExecute(final Message clientMessage, final ServerConnection serverConnection,
+      long start) throws IOException, ClassNotFoundException, InterruptedException {
 
     serverConnection.setAsTrue(REQUIRES_RESPONSE);
 
     CompletionType type = CompletionType.values()[clientMessage.getPart(0).getInt()];
-    /* int txIdInt = */ clientMessage.getPart(1).getInt(); // [bruce] not sure if we need to transmit this
+    /* int txIdInt = */ clientMessage.getPart(1).getInt(); // [bruce] not sure if we need to
+                                                           // transmit this
     final Part statusPart;
     if (type == CompletionType.AFTER_COMPLETION) {
       statusPart = clientMessage.getPart(2);
@@ -81,7 +83,8 @@ public class TXSynchronizationCommand extends BaseCommand {
       statusPart = null;
     }
 
-    final TXManagerImpl txMgr = (TXManagerImpl) serverConnection.getCache().getCacheTransactionManager();
+    final TXManagerImpl txMgr =
+        (TXManagerImpl) serverConnection.getCache().getCacheTransactionManager();
     final InternalDistributedMember member =
         (InternalDistributedMember) serverConnection.getProxyID().getDistributedMember();
 

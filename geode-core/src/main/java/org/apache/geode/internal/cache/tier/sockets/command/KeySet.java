@@ -62,7 +62,8 @@ public class KeySet extends BaseCommand {
     final boolean isDebugEnabled = logger.isDebugEnabled();
     if (isDebugEnabled) {
       logger.debug("{}: Received key set request ({} bytes) from {} for region {}",
-          serverConnection.getName(), clientMessage.getPayloadLength(), serverConnection.getSocketString(), regionName);
+          serverConnection.getName(), clientMessage.getPayloadLength(),
+          serverConnection.getSocketString(), regionName);
     }
 
     // Process the key set request
@@ -76,7 +77,8 @@ public class KeySet extends BaseCommand {
             LocalizedStrings.KeySet_0_THE_INPUT_REGION_NAME_FOR_THE_KEY_SET_REQUEST_IS_NULL,
             serverConnection.getName()));
       }
-      writeKeySetErrorResponse(clientMessage, MessageType.KEY_SET_DATA_ERROR, message, serverConnection);
+      writeKeySetErrorResponse(clientMessage, MessageType.KEY_SET_DATA_ERROR, message,
+          serverConnection);
       serverConnection.setAsTrue(RESPONDED);
       return;
     }
@@ -128,7 +130,8 @@ public class KeySet extends BaseCommand {
       checkForInterrupt(serverConnection, e);
 
       // Otherwise, write an exception message and continue
-      writeChunkedException(clientMessage, e, serverConnection, serverConnection.getChunkedResponseMessage());
+      writeChunkedException(clientMessage, e, serverConnection,
+          serverConnection.getChunkedResponseMessage());
       serverConnection.setAsTrue(RESPONDED);
       return;
     }
@@ -137,7 +140,8 @@ public class KeySet extends BaseCommand {
       // logger.fine(getName() + ": Sent chunk (1 of 1) of register interest
       // response (" + chunkedResponseMsg.getBufferLength() + " bytes) for
       // region " + regionName + " key " + key);
-      logger.debug("{}: Sent key set response for the region {}", serverConnection.getName(), regionName);
+      logger.debug("{}: Sent key set response for the region {}", serverConnection.getName(),
+          regionName);
     }
     // bserverStats.incLong(writeDestroyResponseTimeId,
     // DistributionStats.getStatTime() - start);

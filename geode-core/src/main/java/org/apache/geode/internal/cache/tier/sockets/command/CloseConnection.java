@@ -39,7 +39,8 @@ public class CloseConnection extends BaseCommand {
   private CloseConnection() {}
 
   @Override
-  public void cmdExecute(Message clientMessage, ServerConnection serverConnection, long start) throws IOException {
+  public void cmdExecute(Message clientMessage, ServerConnection serverConnection, long start)
+      throws IOException {
     CacheServerStats stats = serverConnection.getCacheServerStats();
     long oldStart = start;
     boolean respondToClient = serverConnection.getClientVersion().compareTo(Version.GFE_90) >= 0;
@@ -64,12 +65,12 @@ public class CloseConnection extends BaseCommand {
       byte[] keepaliveByte = keepalivePart.getSerializedForm();
       boolean keepalive = (keepaliveByte == null || keepaliveByte[0] == 0) ? false : true;
 
-      serverConnection.getAcceptor().getCacheClientNotifier().setKeepAlive(serverConnection.getProxyID(),
-          keepalive);
+      serverConnection.getAcceptor().getCacheClientNotifier()
+          .setKeepAlive(serverConnection.getProxyID(), keepalive);
 
       if (logger.isDebugEnabled()) {
-        logger.debug("{}: Processed close request from {}:{}, keepAlive: {}", serverConnection.getName(),
-            clientHost, clientPort, keepalive);
+        logger.debug("{}: Processed close request from {}:{}, keepAlive: {}",
+            serverConnection.getName(), clientHost, clientPort, keepalive);
       }
     } finally {
       if (respondToClient) {

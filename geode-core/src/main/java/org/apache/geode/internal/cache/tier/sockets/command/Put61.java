@@ -130,7 +130,8 @@ public class Put61 extends BaseCommand {
         }
         errMessage.append(putMsg);
       }
-      writeErrorResponse(clientMessage, MessageType.PUT_DATA_ERROR, errMessage.toString(), serverConnection);
+      writeErrorResponse(clientMessage, MessageType.PUT_DATA_ERROR, errMessage.toString(),
+          serverConnection);
       serverConnection.setAsTrue(RESPONDED);
       return;
     }
@@ -150,7 +151,8 @@ public class Put61 extends BaseCommand {
         logger.debug("{}:{}", serverConnection.getName(), putMsg);
       }
       errMessage.append(putMsg);
-      writeErrorResponse(clientMessage, MessageType.PUT_DATA_ERROR, errMessage.toString(), serverConnection);
+      writeErrorResponse(clientMessage, MessageType.PUT_DATA_ERROR, errMessage.toString(),
+          serverConnection);
       serverConnection.setAsTrue(RESPONDED);
       return;
     }
@@ -160,7 +162,8 @@ public class Put61 extends BaseCommand {
     ByteBuffer eventIdPartsBuffer = ByteBuffer.wrap(eventPart.getSerializedForm());
     long threadId = EventID.readEventIdPartsFromOptmizedByteArray(eventIdPartsBuffer);
     long sequenceId = EventID.readEventIdPartsFromOptmizedByteArray(eventIdPartsBuffer);
-    EventID eventId = new EventID(serverConnection.getEventMemberIDByteArray(), threadId, sequenceId);
+    EventID eventId =
+        new EventID(serverConnection.getEventMemberIDByteArray(), threadId, sequenceId);
 
     try {
       Object value = null;
@@ -199,8 +202,8 @@ public class Put61 extends BaseCommand {
         // Create the null entry. Since the value is null, the value of the
         // isObject
         // the true after null doesn't matter and is not used.
-        result = region.basicBridgeCreate(key, null, true, callbackArg, serverConnection.getProxyID(), true,
-            new EventIDHolder(eventId), false);
+        result = region.basicBridgeCreate(key, null, true, callbackArg,
+            serverConnection.getProxyID(), true, new EventIDHolder(eventId), false);
       } else {
         // Put the entry
         byte[] delta = null;
@@ -213,8 +216,8 @@ public class Put61 extends BaseCommand {
       if (result) {
         serverConnection.setModificationInfo(true, regionName, key);
       } else {
-        String message = serverConnection.getName() + ": Failed to 6.1 put entry for region " + regionName
-                         + " key " + key + " value " + valuePart;
+        String message = serverConnection.getName() + ": Failed to 6.1 put entry for region "
+            + regionName + " key " + key + " value " + valuePart;
         if (isDebugEnabled) {
           logger.debug(message);
         }
@@ -275,7 +278,8 @@ public class Put61 extends BaseCommand {
     serverConnection.setAsTrue(RESPONDED);
     if (isDebugEnabled) {
       logger.debug("{}: Sent 6.1 put response back to {} for region {} key {} value {}",
-          serverConnection.getName(), serverConnection.getSocketString(), regionName, key, valuePart);
+          serverConnection.getName(), serverConnection.getSocketString(), regionName, key,
+          valuePart);
     }
     stats.incWritePutResponseTime(DistributionStats.getStatTime() - start);
   }

@@ -41,7 +41,8 @@ public class RegisterDataSerializers extends BaseCommand {
       throws IOException, ClassNotFoundException {
     if (logger.isDebugEnabled()) {
       logger.debug("{}: Received register dataserializer request ({} parts) from {}",
-          serverConnection.getName(), clientMessage.getNumberOfParts(), serverConnection.getSocketString());
+          serverConnection.getName(), clientMessage.getNumberOfParts(),
+          serverConnection.getSocketString());
     }
     int noOfParts = clientMessage.getNumberOfParts();
 
@@ -49,10 +50,12 @@ public class RegisterDataSerializers extends BaseCommand {
     int noOfDataSerializers = (noOfParts - 1) / 2;
 
     // retrieve eventID from the last Part
-    ByteBuffer eventIdPartsBuffer = ByteBuffer.wrap(clientMessage.getPart(noOfParts - 1).getSerializedForm());
+    ByteBuffer eventIdPartsBuffer =
+        ByteBuffer.wrap(clientMessage.getPart(noOfParts - 1).getSerializedForm());
     long threadId = EventID.readEventIdPartsFromOptmizedByteArray(eventIdPartsBuffer);
     long sequenceId = EventID.readEventIdPartsFromOptmizedByteArray(eventIdPartsBuffer);
-    EventID eventId = new EventID(serverConnection.getEventMemberIDByteArray(), threadId, sequenceId);
+    EventID eventId =
+        new EventID(serverConnection.getEventMemberIDByteArray(), threadId, sequenceId);
 
     byte[][] serializedDataSerializers = new byte[noOfDataSerializers * 2][];
     boolean caughtCNFE = false;
@@ -101,7 +104,8 @@ public class RegisterDataSerializers extends BaseCommand {
     }
 
     if (logger.isDebugEnabled()) {
-      logger.debug("Registered dataserializer for MembershipId = {}", serverConnection.getMembershipID());
+      logger.debug("Registered dataserializer for MembershipId = {}",
+          serverConnection.getMembershipID());
     }
   }
 }

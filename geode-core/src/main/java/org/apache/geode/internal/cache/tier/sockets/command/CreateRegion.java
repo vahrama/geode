@@ -41,7 +41,8 @@ public class CreateRegion extends BaseCommand {
   }
 
   @Override
-  public void cmdExecute(Message clientMessage, ServerConnection serverConnection, long start) throws IOException {
+  public void cmdExecute(Message clientMessage, ServerConnection serverConnection, long start)
+      throws IOException {
     Part regionNamePart = null;
     String regionName = null;
     serverConnection.setAsTrue(REQUIRES_RESPONSE);
@@ -59,8 +60,8 @@ public class CreateRegion extends BaseCommand {
     if (logger.isDebugEnabled()) {
       logger.debug(
           "{}: Received create region request ({} bytes) from {} for parent region {} region {}",
-          serverConnection.getName(), clientMessage.getPayloadLength(), serverConnection.getSocketString(), parentRegionName,
-          regionName);
+          serverConnection.getName(), clientMessage.getPayloadLength(),
+          serverConnection.getSocketString(), parentRegionName, regionName);
     }
 
     // Process the create region request
@@ -82,7 +83,8 @@ public class CreateRegion extends BaseCommand {
             LocalizedStrings.CreateRegion_THE_INPUT_REGION_NAME_FOR_THE_CREATE_REGION_REQUEST_IS_NULL
                 .toLocalizedString();
       }
-      writeErrorResponse(clientMessage, MessageType.CREATE_REGION_DATA_ERROR, errMessage, serverConnection);
+      writeErrorResponse(clientMessage, MessageType.CREATE_REGION_DATA_ERROR, errMessage,
+          serverConnection);
       serverConnection.setAsTrue(RESPONDED);
       return;
     }

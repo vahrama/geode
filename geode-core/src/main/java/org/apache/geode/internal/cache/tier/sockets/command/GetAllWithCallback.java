@@ -91,9 +91,9 @@ public class GetAllWithCallback extends BaseCommand {
     if (logger.isDebugEnabled()) {
       StringBuffer buffer = new StringBuffer();
       buffer.append(serverConnection.getName()).append(": Received getAll request (")
-            .append(clientMessage.getPayloadLength()).append(" bytes) from ").append(serverConnection.getSocketString())
-            .append(" for region ").append(regionName).append(" with callback ").append(callback)
-            .append(" keys ");
+          .append(clientMessage.getPayloadLength()).append(" bytes) from ")
+          .append(serverConnection.getSocketString()).append(" for region ").append(regionName)
+          .append(" with callback ").append(callback).append(" keys ");
       if (keys != null) {
         for (int i = 0; i < keys.length; i++) {
           buffer.append(keys[i]).append(" ");
@@ -113,8 +113,9 @@ public class GetAllWithCallback extends BaseCommand {
             .toLocalizedString();
       }
       logger.warn(LocalizedMessage.create(LocalizedStrings.TWO_ARG_COLON,
-          new Object[] { serverConnection.getName(), message}));
-      writeChunkedErrorResponse(clientMessage, MessageType.GET_ALL_DATA_ERROR, message, serverConnection);
+          new Object[] {serverConnection.getName(), message}));
+      writeChunkedErrorResponse(clientMessage, MessageType.GET_ALL_DATA_ERROR, message,
+          serverConnection);
       serverConnection.setAsTrue(RESPONDED);
       return;
     }

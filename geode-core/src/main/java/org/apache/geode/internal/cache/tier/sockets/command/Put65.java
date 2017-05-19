@@ -146,7 +146,8 @@ public class Put65 extends BaseCommand {
       logger.debug(
           "{}: Received {}put request ({} bytes) from {} for region {} key {} txId {} posdup: {}",
           serverConnection.getName(), (isDelta ? " delta " : " "), clientMessage.getPayloadLength(),
-          serverConnection.getSocketString(), regionName, key, clientMessage.getTransactionId(), clientMessage.isRetry());
+          serverConnection.getSocketString(), regionName, key, clientMessage.getTransactionId(),
+          clientMessage.isRetry());
     }
 
     // Process the put request
@@ -165,7 +166,8 @@ public class Put65 extends BaseCommand {
         }
         errMessage.append(putMsg);
       }
-      writeErrorResponse(clientMessage, MessageType.PUT_DATA_ERROR, errMessage.toString(), serverConnection);
+      writeErrorResponse(clientMessage, MessageType.PUT_DATA_ERROR, errMessage.toString(),
+          serverConnection);
       serverConnection.setAsTrue(RESPONDED);
       return;
     }
@@ -185,7 +187,8 @@ public class Put65 extends BaseCommand {
         logger.debug("{}:{}", serverConnection.getName(), putMsg);
       }
       errMessage.append(putMsg);
-      writeErrorResponse(clientMessage, MessageType.PUT_DATA_ERROR, errMessage.toString(), serverConnection);
+      writeErrorResponse(clientMessage, MessageType.PUT_DATA_ERROR, errMessage.toString(),
+          serverConnection);
       serverConnection.setAsTrue(RESPONDED);
       return;
     }
@@ -194,8 +197,8 @@ public class Put65 extends BaseCommand {
     long threadId = EventID.readEventIdPartsFromOptmizedByteArray(eventIdPartsBuffer);
     long sequenceId = EventID.readEventIdPartsFromOptmizedByteArray(eventIdPartsBuffer);
 
-    EventIDHolder clientEvent =
-        new EventIDHolder(new EventID(serverConnection.getEventMemberIDByteArray(), threadId, sequenceId));
+    EventIDHolder clientEvent = new EventIDHolder(
+        new EventID(serverConnection.getEventMemberIDByteArray(), threadId, sequenceId));
 
     Breadcrumbs.setEventId(clientEvent.getEventId());
 
@@ -267,8 +270,8 @@ public class Put65 extends BaseCommand {
           }
           // invoke basicBridgePutIfAbsent anyway to ensure that the event is distributed to all
           // servers - bug #51664
-          region.basicBridgePutIfAbsent(key, value, isObject, callbackArg, serverConnection.getProxyID(),
-              true, clientEvent);
+          region.basicBridgePutIfAbsent(key, value, isObject, callbackArg,
+              serverConnection.getProxyID(), true, clientEvent);
           oldValue = null;
         } else {
           oldValue = region.basicBridgePutIfAbsent(key, value, isObject, callbackArg,
@@ -356,8 +359,8 @@ public class Put65 extends BaseCommand {
         // Create the null entry. Since the value is null, the value of the
         // isObject
         // the true after null doesn't matter and is not used.
-        result = region.basicBridgeCreate(key, null, true, callbackArg, serverConnection.getProxyID(), true,
-            clientEvent, false);
+        result = region.basicBridgeCreate(key, null, true, callbackArg,
+            serverConnection.getProxyID(), true, clientEvent, false);
         if (clientMessage.isRetry() && clientEvent.isConcurrencyConflict()
             && clientEvent.getVersionTag() != null) {
           result = true;
@@ -372,7 +375,8 @@ public class Put65 extends BaseCommand {
         if (isDelta) {
           delta = valuePart.getSerializedForm();
         }
-        TXManagerImpl txMgr = (TXManagerImpl) serverConnection.getCache().getCacheTransactionManager();
+        TXManagerImpl txMgr =
+            (TXManagerImpl) serverConnection.getCache().getCacheTransactionManager();
         // bug 43068 - use create() if in a transaction and op is CREATE
         if (txMgr.getTXState() != null && operation.isCreate()) {
           result = region.basicBridgeCreate(key, (byte[]) value, isObject, callbackArg,
@@ -393,8 +397,8 @@ public class Put65 extends BaseCommand {
       if (result) {
         serverConnection.setModificationInfo(true, regionName, key);
       } else {
-        String message = serverConnection.getName() + ": Failed to put entry for region " + regionName
-                         + " key " + key + " value " + valuePart;
+        String message = serverConnection.getName() + ": Failed to put entry for region "
+            + regionName + " key " + key + " value " + valuePart;
         if (isDebugEnabled) {
           logger.debug(message);
         }
@@ -443,8 +447,8 @@ public class Put65 extends BaseCommand {
     if (region instanceof PartitionedRegion) {
       PartitionedRegion pr = (PartitionedRegion) region;
       if (pr.getNetworkHopType() != PartitionedRegion.NETWORK_HOP_NONE) {
-        writeReplyWithRefreshMetadata(clientMessage, serverConnection, pr, sendOldValue, oldValueIsObject, oldValue,
-            pr.getNetworkHopType(), clientEvent.getVersionTag());
+        writeReplyWithRefreshMetadata(clientMessage, serverConnection, pr, sendOldValue,
+            oldValueIsObject, oldValue, pr.getNetworkHopType(), clientEvent.getVersionTag());
         pr.clearNetworkHopData();
       } else {
         writeReply(clientMessage, serverConnection, sendOldValue, oldValueIsObject, oldValue,
@@ -457,7 +461,8 @@ public class Put65 extends BaseCommand {
     serverConnection.setAsTrue(RESPONDED);
     if (isDebugEnabled) {
       logger.debug("{}: Sent put response back to {} for region {} key {} value {}",
-          serverConnection.getName(), serverConnection.getSocketString(), regionName, key, valuePart);
+          serverConnection.getName(), serverConnection.getSocketString(), regionName, key,
+          valuePart);
     }
     stats.incWritePutResponseTime(DistributionStats.getStatTime() - start);
 

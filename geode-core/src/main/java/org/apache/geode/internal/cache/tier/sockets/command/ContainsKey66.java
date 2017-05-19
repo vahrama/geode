@@ -55,7 +55,8 @@ public class ContainsKey66 extends BaseCommand {
   }
 
   @Override
-  public void cmdExecute(Message clientMessage, ServerConnection serverConnection, long start) throws IOException {
+  public void cmdExecute(Message clientMessage, ServerConnection serverConnection, long start)
+      throws IOException {
     Part regionNamePart = null, keyPart = null;
     String regionName = null;
     Object key = null;
@@ -82,7 +83,8 @@ public class ContainsKey66 extends BaseCommand {
     }
     if (logger.isDebugEnabled()) {
       logger.debug("{}: Received containsKey request ({} bytes) from {} for region {} key {}",
-          serverConnection.getName(), clientMessage.getPayloadLength(), serverConnection.getSocketString(), regionName, key);
+          serverConnection.getName(), clientMessage.getPayloadLength(),
+          serverConnection.getSocketString(), regionName, key);
     }
 
     // Process the containsKey request
@@ -103,7 +105,8 @@ public class ContainsKey66 extends BaseCommand {
             LocalizedStrings.ContainsKey_THE_INPUT_REGION_NAME_FOR_THE_CONTAINSKEY_REQUEST_IS_NULL
                 .toLocalizedString();
       }
-      writeErrorResponse(clientMessage, MessageType.CONTAINS_KEY_DATA_ERROR, errMessage, serverConnection);
+      writeErrorResponse(clientMessage, MessageType.CONTAINS_KEY_DATA_ERROR, errMessage,
+          serverConnection);
       serverConnection.setAsTrue(RESPONDED);
       return;
     }

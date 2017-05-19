@@ -52,7 +52,8 @@ public class Request extends BaseCommand {
   Request() {}
 
   @Override
-  public void cmdExecute(Message clientMessage, ServerConnection serverConnection, long start) throws IOException {
+  public void cmdExecute(Message clientMessage, ServerConnection serverConnection, long start)
+      throws IOException {
     Part regionNamePart = null, keyPart = null, valuePart = null;
     String regionName = null;
     Object callbackArg = null, key = null;
@@ -94,8 +95,8 @@ public class Request extends BaseCommand {
     }
     if (logger.isDebugEnabled()) {
       logger.debug("{}: Received get request ({} bytes) from {} for region {} key {} txId {}",
-          serverConnection.getName(), clientMessage.getPayloadLength(), serverConnection.getSocketString(), regionName, key,
-          clientMessage.getTransactionId());
+          serverConnection.getName(), clientMessage.getPayloadLength(),
+          serverConnection.getSocketString(), regionName, key, clientMessage.getTransactionId());
     }
 
     // Process the get request
@@ -179,8 +180,8 @@ public class Request extends BaseCommand {
         if (region instanceof PartitionedRegion) {
           PartitionedRegion pr = (PartitionedRegion) region;
           if (pr.getNetworkHopType() != PartitionedRegion.NETWORK_HOP_NONE) {
-            writeResponseWithRefreshMetadata(data, callbackArg, clientMessage, isObject, serverConnection, pr,
-                pr.getNetworkHopType());
+            writeResponseWithRefreshMetadata(data, callbackArg, clientMessage, isObject,
+                serverConnection, pr, pr.getNetworkHopType());
             pr.clearNetworkHopData();
           } else {
             writeResponse(data, callbackArg, clientMessage, isObject, serverConnection);
@@ -192,7 +193,8 @@ public class Request extends BaseCommand {
         serverConnection.setAsTrue(RESPONDED);
         if (logger.isDebugEnabled()) {
           logger.debug("{}: Wrote get response back to {} for region {} key {} value: {}",
-              serverConnection.getName(), serverConnection.getSocketString(), regionName, key, data);
+              serverConnection.getName(), serverConnection.getSocketString(), regionName, key,
+              data);
         }
         stats.incWriteGetResponseTime(DistributionStats.getStatTime() - start);
       }

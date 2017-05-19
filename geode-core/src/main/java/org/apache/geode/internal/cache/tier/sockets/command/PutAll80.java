@@ -111,7 +111,8 @@ public class PutAll80 extends BaseCommand {
                 .toLocalizedString();
         logger.warn("{}: {}", serverConnection.getName(), putAllMsg);
         errMessage.append(putAllMsg);
-        writeChunkedErrorResponse(clientMessage, MessageType.PUT_DATA_ERROR, errMessage.toString(), serverConnection);
+        writeChunkedErrorResponse(clientMessage, MessageType.PUT_DATA_ERROR, errMessage.toString(),
+            serverConnection);
         serverConnection.setAsTrue(RESPONDED);
         return;
       }
@@ -131,7 +132,8 @@ public class PutAll80 extends BaseCommand {
       ByteBuffer eventIdPartsBuffer = ByteBuffer.wrap(eventPart.getSerializedForm());
       long threadId = EventID.readEventIdPartsFromOptmizedByteArray(eventIdPartsBuffer);
       long sequenceId = EventID.readEventIdPartsFromOptmizedByteArray(eventIdPartsBuffer);
-      EventID eventId = new EventID(serverConnection.getEventMemberIDByteArray(), threadId, sequenceId);
+      EventID eventId =
+          new EventID(serverConnection.getEventMemberIDByteArray(), threadId, sequenceId);
 
       Breadcrumbs.setEventId(eventId);
 
@@ -152,10 +154,11 @@ public class PutAll80 extends BaseCommand {
 
       if (logger.isDebugEnabled()) {
         StringBuilder buffer = new StringBuilder();
-        buffer.append(serverConnection.getName()).append(": Received ").append(this.putAllClassName())
-              .append(" request from ").append(serverConnection.getSocketString()).append(" for region ")
-              .append(regionName).append(callbackArg != null ? (" callbackArg " + callbackArg) : "")
-              .append(" with ").append(numberOfKeys).append(" entries.");
+        buffer.append(serverConnection.getName()).append(": Received ")
+            .append(this.putAllClassName()).append(" request from ")
+            .append(serverConnection.getSocketString()).append(" for region ").append(regionName)
+            .append(callbackArg != null ? (" callbackArg " + callbackArg) : "").append(" with ")
+            .append(numberOfKeys).append(" entries.");
         logger.debug(buffer.toString());
       }
       // building the map
@@ -171,7 +174,8 @@ public class PutAll80 extends BaseCommand {
                   .toLocalizedString();
           logger.warn("{}: {}", serverConnection.getName(), putAllMsg);
           errMessage.append(putAllMsg);
-          writeChunkedErrorResponse(clientMessage, MessageType.PUT_DATA_ERROR, errMessage.toString(), serverConnection);
+          writeChunkedErrorResponse(clientMessage, MessageType.PUT_DATA_ERROR,
+              errMessage.toString(), serverConnection);
           serverConnection.setAsTrue(RESPONDED);
           return;
         }
@@ -183,7 +187,8 @@ public class PutAll80 extends BaseCommand {
                   .toLocalizedString();
           logger.warn("{}: {}", serverConnection.getName(), putAllMsg);
           errMessage.append(putAllMsg);
-          writeChunkedErrorResponse(clientMessage, MessageType.PUT_DATA_ERROR, errMessage.toString(), serverConnection);
+          writeChunkedErrorResponse(clientMessage, MessageType.PUT_DATA_ERROR,
+              errMessage.toString(), serverConnection);
           serverConnection.setAsTrue(RESPONDED);
           return;
         }
@@ -232,9 +237,10 @@ public class PutAll80 extends BaseCommand {
         // isObjectMap.put(key, new Boolean(isObject));
       } // for
 
-      if (clientMessage.getNumberOfParts() == (BASE_PART_COUNT + 2 * numberOfKeys + 1)) {// it means optional
-                                                                               // timeout has been
-                                                                               // added
+      if (clientMessage.getNumberOfParts() == (BASE_PART_COUNT + 2 * numberOfKeys + 1)) {// it means
+                                                                                         // optional
+        // timeout has been
+        // added
         int timeout = clientMessage.getPart(BASE_PART_COUNT + 2 * numberOfKeys).getInt();
         serverConnection.setRequestSpecificTimeout(timeout);
       }
@@ -265,8 +271,8 @@ public class PutAll80 extends BaseCommand {
          */
       }
 
-      response = region.basicBridgePutAll(map, retryVersions, serverConnection.getProxyID(), eventId,
-          skipCallbacks, callbackArg);
+      response = region.basicBridgePutAll(map, retryVersions, serverConnection.getProxyID(),
+          eventId, skipCallbacks, callbackArg);
       if (!region.getConcurrencyChecksEnabled() || clientIsEmpty || !clientHasCCEnabled) {
         // the client only needs this if versioning is being used and the client
         // has storage
@@ -281,7 +287,8 @@ public class PutAll80 extends BaseCommand {
       if (region instanceof PartitionedRegion) {
         PartitionedRegion pr = (PartitionedRegion) region;
         if (pr.getNetworkHopType() != PartitionedRegion.NETWORK_HOP_NONE) {
-          writeReplyWithRefreshMetadata(clientMessage, response, serverConnection, pr, pr.getNetworkHopType());
+          writeReplyWithRefreshMetadata(clientMessage, response, serverConnection, pr,
+              pr.getNetworkHopType());
           pr.clearNetworkHopData();
           replyWithMetaData = true;
         }

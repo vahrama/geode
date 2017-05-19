@@ -71,9 +71,9 @@ public class ExecuteCQ extends BaseCQCommand {
     byte[] isDurableByte = isDurablePart.getSerializedForm();
     boolean isDurable = (isDurableByte == null || isDurableByte[0] == 0) ? false : true;
     if (logger.isDebugEnabled()) {
-      logger.debug("{}: Received {} request from {} CqName: {} queryString: {}", serverConnection.getName(),
-          MessageType.getString(clientMessage.getMessageType()), serverConnection.getSocketString(), cqName,
-          cqQueryString);
+      logger.debug("{}: Received {} request from {} CqName: {} queryString: {}",
+          serverConnection.getName(), MessageType.getString(clientMessage.getMessageType()),
+          serverConnection.getSocketString(), cqName, cqQueryString);
     }
 
     DefaultQueryService qService = null;
@@ -108,7 +108,8 @@ public class ExecuteCQ extends BaseCQCommand {
       cqQuery = cqServiceForExec.executeCq(cqName, cqQueryString, cqState, id,
           acceptor.getCacheClientNotifier(), isDurable, false, 0, null);
     } catch (CqException cqe) {
-      sendCqResponse(MessageType.CQ_EXCEPTION_TYPE, "", clientMessage.getTransactionId(), cqe, serverConnection);
+      sendCqResponse(MessageType.CQ_EXCEPTION_TYPE, "", clientMessage.getTransactionId(), cqe,
+          serverConnection);
       return;
     } catch (Exception e) {
       writeChunkedException(clientMessage, e, serverConnection);
@@ -130,8 +131,8 @@ public class ExecuteCQ extends BaseCQCommand {
         cqRegionNames = ((DefaultQuery) query).getRegionsInQuery(null);
       }
       ((DefaultQuery) query).setIsCqQuery(true);
-      successQuery = processQuery(clientMessage, query, cqQueryString, cqRegionNames, start, cqQuery,
-          executeCQContext, serverConnection, sendResults);
+      successQuery = processQuery(clientMessage, query, cqQueryString, cqRegionNames, start,
+          cqQuery, executeCQContext, serverConnection, sendResults);
 
       // Update the CQ statistics.
       cqQuery.getVsdStats().setCqInitialResultsTime((DistributionStats.getStatTime()) - oldstart);

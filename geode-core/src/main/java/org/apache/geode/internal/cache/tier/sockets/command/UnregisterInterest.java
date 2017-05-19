@@ -81,7 +81,8 @@ public class UnregisterInterest extends BaseCommand {
     if (logger.isDebugEnabled()) {
       logger.debug(
           "{}: Received unregister interest request ({} bytes) from {} for region {} key {}",
-          serverConnection.getName(), clientMessage.getPayloadLength(), serverConnection.getSocketString(), regionName, key);
+          serverConnection.getName(), clientMessage.getPayloadLength(),
+          serverConnection.getSocketString(), regionName, key);
     }
 
     // Process the unregister interest request
@@ -96,7 +97,8 @@ public class UnregisterInterest extends BaseCommand {
           LocalizedStrings.UnRegisterInterest_THE_INPUT_REGION_NAME_FOR_THE_UNREGISTER_INTEREST_REQUEST_IS_NULL;
       String s = errMessage.toLocalizedString();
       logger.warn("{}: {}", serverConnection.getName(), s);
-      writeErrorResponse(clientMessage, MessageType.UNREGISTER_INTEREST_DATA_ERROR, s, serverConnection);
+      writeErrorResponse(clientMessage, MessageType.UNREGISTER_INTEREST_DATA_ERROR, s,
+          serverConnection);
       serverConnection.setAsTrue(RESPONDED);
       return;
     }
@@ -141,8 +143,8 @@ public class UnregisterInterest extends BaseCommand {
      */
     // Unregister interest irrelevent of whether the region is present it or
     // not
-    serverConnection.getAcceptor().getCacheClientNotifier().unregisterClientInterest(regionName, key,
-        interestType, isClosing, serverConnection.getProxyID(), keepalive);
+    serverConnection.getAcceptor().getCacheClientNotifier().unregisterClientInterest(regionName,
+        key, interestType, isClosing, serverConnection.getProxyID(), keepalive);
 
     // Update the statistics and write the reply
     // bserverStats.incLong(processDestroyTimeId,
@@ -151,8 +153,8 @@ public class UnregisterInterest extends BaseCommand {
     writeReply(clientMessage, serverConnection);
     serverConnection.setAsTrue(RESPONDED);
     if (logger.isDebugEnabled()) {
-      logger.debug("{}: Sent unregister interest response for region {} key {}", serverConnection.getName(),
-          regionName, key);
+      logger.debug("{}: Sent unregister interest response for region {} key {}",
+          serverConnection.getName(), regionName, key);
     }
     // bserverStats.incLong(writeDestroyResponseTimeId,
     // DistributionStats.getStatTime() - start);
