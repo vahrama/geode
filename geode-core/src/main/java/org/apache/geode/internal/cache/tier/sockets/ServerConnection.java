@@ -723,7 +723,10 @@ public class ServerConnection implements Runnable {
     ThreadState threadState = null;
     try {
       if (msg != null) {
-        // Since this thread is not interrupted when the cache server is shutdown, test again after a message has been read. This is a bit of a hack. I think this thread should be interrupted, but currently AcceptorImpl doesn't keep track of the threads that it launches.
+        // Since this thread is not interrupted when the cache server is shutdown, test again after
+        // a message has been read. This is a bit of a hack. I think this thread should be
+        // interrupted, but currently AcceptorImpl doesn't keep track of the threads that it
+        // launches.
         if (!this.processMessages || (crHelper.isShutdown())) {
           if (logger.isDebugEnabled()) {
             logger.debug("{} ignoring message of type {} from client {} due to shutdown.",

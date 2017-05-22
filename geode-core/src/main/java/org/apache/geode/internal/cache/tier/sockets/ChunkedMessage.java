@@ -152,7 +152,8 @@ public class ChunkedMessage extends Message {
 
   public void setLastChunkAndNumParts(boolean lastChunk, int numParts) {
     setLastChunk(lastChunk);
-    if (this.serverConnection != null && this.serverConnection.getClientVersion().compareTo(Version.GFE_65) >= 0) {
+    if (this.serverConnection != null
+        && this.serverConnection.getClientVersion().compareTo(Version.GFE_65) >= 0) {
       // we us e three bits for number of parts in last chunk byte
       // we us e three bits for number of parts in last chunk byte
       byte localLastChunk = (byte) (numParts << 5);
@@ -240,7 +241,8 @@ public class ChunkedMessage extends Message {
     int totalBytesRead = 0;
     do {
       int bytesRead = 0;
-      bytesRead = inputStream.read(cb.array(), totalBytesRead, CHUNK_HEADER_LENGTH - totalBytesRead);
+      bytesRead =
+          inputStream.read(cb.array(), totalBytesRead, CHUNK_HEADER_LENGTH - totalBytesRead);
       if (bytesRead == -1) {
         throw new EOFException(
             LocalizedStrings.ChunkedMessage_CHUNK_READ_ERROR_CONNECTION_RESET.toLocalizedString());
