@@ -572,20 +572,9 @@ public class CacheClientUpdater extends Thread implements ClientUpdater, Disconn
    * the server.
    */
   private Message initializeMessage() {
-    Message _message = new Message(2, Version.CURRENT);
-    try {
-      _message.setComms(socket, in, out, commBuffer, this.stats);
-    } catch (IOException e) {
-      if (!quitting()) {
-        if (logger.isDebugEnabled()) {
-          logger.debug(
-              "{}: Caught following exception while attempting to initialize a server-to-client communication socket and will exit",
-              this, e);
-        }
-        stopProcessing();
-      }
-    }
-    return _message;
+    Message message = new Message(2, Version.CURRENT);
+    message.setComms(this.socket, this.in, this.out, this.commBuffer, this.stats);
+    return message;
   }
 
   /* refinement of method inherited from Thread */
