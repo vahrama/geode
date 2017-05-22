@@ -43,7 +43,8 @@ import org.apache.geode.test.junit.categories.DistributedTest;
 public class ParallelGatewaySenderOperationsDUnitTest extends WANTestBase {
 
   @Rule
-  public DistributedRestoreSystemProperties restoreSystemProperties = new DistributedRestoreSystemProperties();
+  public DistributedRestoreSystemProperties restoreSystemProperties =
+      new DistributedRestoreSystemProperties();
 
   @Override
   protected final void postSetUpWANTestBase() throws Exception {

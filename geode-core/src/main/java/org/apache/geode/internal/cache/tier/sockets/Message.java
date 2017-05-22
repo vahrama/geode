@@ -84,7 +84,8 @@ public class Message {
   // Tentative workaround to avoid OOM stated in #46754.
   public static final ThreadLocal<Integer> MESSAGE_TYPE = new ThreadLocal<>();
 
-  public static final String MAX_MESSAGE_SIZE_PROPERTY = DistributionConfig.GEMFIRE_PREFIX + "client.max-message-size";
+  public static final String MAX_MESSAGE_SIZE_PROPERTY =
+      DistributionConfig.GEMFIRE_PREFIX + "client.max-message-size";
 
   static final int DEFAULT_MAX_MESSAGE_SIZE = 1073741824;
 
@@ -299,8 +300,8 @@ public class Message {
     } else {
       HeapDataOutputStream hdos = new HeapDataOutputStream(str);
       try {
-      this.messageModified = true;
-      part.setPartState(hdos, false);
+        this.messageModified = true;
+        part.setPartState(hdos, false);
       } finally {
         close(hdos);
       }
@@ -309,8 +310,8 @@ public class Message {
   }
 
   /*
-   * Adds a new part to this message that contains a {@code byte} array (as opposed to a
-   * serialized object).
+   * Adds a new part to this message that contains a {@code byte} array (as opposed to a serialized
+   * object).
    *
    * @see #addPart(byte[], boolean)
    */
@@ -378,7 +379,7 @@ public class Message {
     if (this.version.equals(Version.CURRENT)) {
       v = null;
     }
-    
+
     // create the HDOS with a flag telling it that it can keep any byte[] or ByteBuffers/ByteSources
     // passed to it.
     HeapDataOutputStream hdos = new HeapDataOutputStream(this.chunkSize, v, true);
@@ -399,12 +400,12 @@ public class Message {
     if (zipValues) {
       throw new UnsupportedOperationException("zipValues no longer supported");
     }
-    
+
     Version v = this.version;
     if (this.version.equals(Version.CURRENT)) {
       v = null;
     }
-    
+
     HeapDataOutputStream hdos = new HeapDataOutputStream(this.chunkSize, v);
     try {
       BlobHelper.serializeTo(o, hdos);
@@ -520,7 +521,8 @@ public class Message {
   }
 
   protected void packHeaderInfoForSending(int msgLen, boolean isSecurityHeader) {
-    // setting second bit of flags byte for client this is not require but this makes all changes easily at client side right now just see this bit and process security header
+    // setting second bit of flags byte for client this is not require but this makes all changes
+    // easily at client side right now just see this bit and process security header
     byte flagsByte = this.flags;
     if (isSecurityHeader) {
       flagsByte |= MESSAGE_HAS_SECURE_PART;
@@ -529,7 +531,7 @@ public class Message {
       flagsByte |= MESSAGE_IS_RETRY;
     }
     getCommBuffer().putInt(this.messageType).putInt(msgLen).putInt(this.numberOfParts)
-                   .putInt(this.transactionId).put(flagsByte);
+        .putInt(this.transactionId).put(flagsByte);
   }
 
   protected Part getSecurityPart() {
@@ -601,7 +603,7 @@ public class Message {
 
         if (msgLen > this.maxMessageSize) {
           throw new MessageTooLargeException("Message size (" + msgLen
-                                             + ") exceeds gemfire.client.max-message-size setting (" + this.maxMessageSize + ")");
+              + ") exceeds gemfire.client.max-message-size setting (" + this.maxMessageSize + ")");
         }
 
         commBuffer.clear();
@@ -673,7 +675,7 @@ public class Message {
   void fetchHeader() throws IOException {
     final ByteBuffer cb = getCommBuffer();
     cb.clear();
-    
+
     // messageType is invalidated here and can be used as an indicator
     // of problems reading the message
     this.messageType = MessageType.INVALID;
@@ -693,7 +695,7 @@ public class Message {
         }
       } while (cb.remaining() > 0);
       cb.flip();
-      
+
     } else {
       int hdr = 0;
       do {
@@ -728,7 +730,7 @@ public class Message {
       throw new IOException(LocalizedStrings.Message_INVALID_MESSAGE_TYPE_0_WHILE_READING_HEADER
           .toLocalizedString(type));
     }
-    
+
     int timeToWait = 0;
     if (this.serverConnection != null) {
       // Keep track of the fact that a message is being processed.
@@ -736,7 +738,7 @@ public class Message {
       timeToWait = this.serverConnection.getClientReadTimeout();
     }
     this.readHeader = true;
-    
+
     if (this.messageLimiter != null) {
       for (;;) {
         this.serverConnection.getCachedRegionHelper().checkCancelInProgress(null);
@@ -764,15 +766,13 @@ public class Message {
         }
       } // for
     }
-    
+
     if (len > 0) {
       if (this.maxIncomingMessageLength > 0 && len > this.maxIncomingMessageLength) {
         throw new IOException(LocalizedStrings.Message_MESSAGE_SIZE_0_EXCEEDED_MAX_LIMIT_OF_1
-            .toLocalizedString(new Object[] {
-              len, this.maxIncomingMessageLength
-            }));
+            .toLocalizedString(new Object[] {len, this.maxIncomingMessageLength}));
       }
-      
+
       if (this.dataLimiter != null) {
         for (;;) {
           if (this.serverConnection != null) {
@@ -840,7 +840,7 @@ public class Message {
     if (len > 0 && numParts <= 0 || len <= 0 && numParts > 0) {
       throw new IOException(
           LocalizedStrings.Message_PART_LENGTH_0_AND_NUMBER_OF_PARTS_1_INCONSISTENT
-              .toLocalizedString(new Object[] { len, numParts }));
+              .toLocalizedString(new Object[] {len, numParts}));
     }
 
     Integer msgType = MESSAGE_TYPE.get();
@@ -854,7 +854,7 @@ public class Message {
             + MessageType.getString(msgType) + " operation.");
       }
     }
-    
+
     setNumberOfParts(numParts);
     if (numParts <= 0) {
       return;
@@ -872,7 +872,8 @@ public class Message {
     int readSecurePart = checkAndSetSecurityPart();
 
     int bytesRemaining = len;
-    for (int i = 0; i < numParts + readSecurePart || readSecurePart == 1 && cb.remaining() > 0; i++) {
+    for (int i = 0; i < numParts + readSecurePart
+        || readSecurePart == 1 && cb.remaining() > 0; i++) {
       int bytesReadThisTime = readPartChunk(bytesRemaining);
       bytesRemaining -= bytesReadThisTime;
 
@@ -887,7 +888,7 @@ public class Message {
       int partLen = cb.getInt();
       byte partType = cb.get();
       byte[] partBytes = null;
-      
+
       if (partLen > 0) {
         partBytes = new byte[partLen];
         int alreadyReadBytes = cb.remaining();
@@ -897,7 +898,7 @@ public class Message {
           }
           cb.get(partBytes, 0, alreadyReadBytes);
         }
-        
+
         // now we need to read partLen - alreadyReadBytes off the wire
         int off = alreadyReadBytes;
         int remaining = partLen - off;
@@ -965,20 +966,20 @@ public class Message {
       // we already have the next part header in commBuffer so just return
       return 0;
     }
-    
+
     if (commBuffer.position() != 0) {
       commBuffer.compact();
     } else {
       commBuffer.position(commBuffer.limit());
       commBuffer.limit(commBuffer.capacity());
     }
-    
+
     if (this.serverConnection != null) {
       // Keep track of the fact that we are making progress
       this.serverConnection.updateProcessingMessage();
     }
     int bytesRead = 0;
-    
+
     if (this.socketChannel != null) {
       int remaining = commBuffer.remaining();
       if (remaining > bytesRemaining) {
@@ -1006,7 +1007,7 @@ public class Message {
         bytesToRead = bytesRemaining;
       }
       int pos = commBuffer.position();
-      
+
       while (bytesToRead > 0) {
         int res = this.inputStream.read(commBuffer.array(), pos, bytesToRead);
         if (res != -1) {
@@ -1022,7 +1023,7 @@ public class Message {
                   .toLocalizedString());
         }
       }
-      
+
       commBuffer.position(pos);
     }
     commBuffer.flip();
