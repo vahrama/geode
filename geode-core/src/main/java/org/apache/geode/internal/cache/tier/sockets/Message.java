@@ -14,8 +14,6 @@
  */
 package org.apache.geode.internal.cache.tier.sockets;
 
-import static org.apache.geode.internal.util.IOUtils.close;
-
 import org.apache.geode.SerializationException;
 import org.apache.geode.distributed.internal.DistributionConfig;
 import org.apache.geode.internal.Assert;
@@ -111,26 +109,20 @@ public class Message {
   private static final byte[] FALSE = defineFalse();
 
   private static byte[] defineTrue() {
-    HeapDataOutputStream hdos = new HeapDataOutputStream(10, null);
-    try {
+    try (HeapDataOutputStream hdos = new HeapDataOutputStream(10, null)) {
       BlobHelper.serializeTo(Boolean.TRUE, hdos);
       return hdos.toByteArray();
     } catch (IOException e) {
       throw new IllegalStateException(e);
-    } finally {
-      close(hdos);
     }
   }
 
   private static byte[] defineFalse() {
-    HeapDataOutputStream hdos = new HeapDataOutputStream(10, null);
-    try {
+    try (HeapDataOutputStream hdos = new HeapDataOutputStream(10, null)) {
       BlobHelper.serializeTo(Boolean.FALSE, hdos);
       return hdos.toByteArray();
     } catch (IOException e) {
       throw new IllegalStateException(e);
-    } finally {
-      close(hdos);
     }
   }
 
@@ -288,23 +280,17 @@ public class Message {
     if (enableCaching) {
       byte[] bytes = CACHED_STRINGS.get(str);
       if (bytes == null) {
-        HeapDataOutputStream hdos = new HeapDataOutputStream(str);
-        try {
+        try (HeapDataOutputStream hdos = new HeapDataOutputStream(str)) {
           bytes = hdos.toByteArray();
           CACHED_STRINGS.put(str, bytes);
-        } finally {
-          close(hdos);
         }
       }
       part.setPartState(bytes, false);
+
     } else {
-      HeapDataOutputStream hdos = new HeapDataOutputStream(str);
-      try {
-        this.messageModified = true;
-        part.setPartState(hdos, false);
-      } finally {
-        close(hdos);
-      }
+      // do NOT close the HeapDataOutputStream
+      this.messageModified = true;
+      part.setPartState(new HeapDataOutputStream(str), false);
     }
     this.currentPart++;
   }
@@ -380,20 +366,18 @@ public class Message {
       v = null;
     }
 
-    // create the HDOS with a flag telling it that it can keep any byte[] or ByteBuffers/ByteSources
-    // passed to it.
+    // Create the HDOS with a flag telling it that it can keep any byte[] or ByteBuffers/ByteSources
+    // passed to it. Do NOT close the HeapDataOutputStream!
     HeapDataOutputStream hdos = new HeapDataOutputStream(this.chunkSize, v, true);
     try {
       BlobHelper.serializeTo(o, hdos);
-      this.messageModified = true;
-      Part part = this.partsList[this.currentPart];
-      part.setPartState(hdos, true);
-      this.currentPart++;
     } catch (IOException ex) {
       throw new SerializationException("failed serializing object", ex);
-    } finally {
-      close(hdos);
     }
+    this.messageModified = true;
+    Part part = this.partsList[this.currentPart];
+    part.setPartState(hdos, true);
+    this.currentPart++;
   }
 
   private void serializeAndAddPart(Object o, boolean zipValues) {
@@ -406,18 +390,17 @@ public class Message {
       v = null;
     }
 
+    // do NOT close the HeapDataOutputStream
     HeapDataOutputStream hdos = new HeapDataOutputStream(this.chunkSize, v);
     try {
       BlobHelper.serializeTo(o, hdos);
-      this.messageModified = true;
-      Part part = this.partsList[this.currentPart];
-      part.setPartState(hdos, true);
-      this.currentPart++;
     } catch (IOException ex) {
       throw new SerializationException("failed serializing object", ex);
-    } finally {
-      close(hdos);
     }
+    this.messageModified = true;
+    Part part = this.partsList[this.currentPart];
+    part.setPartState(hdos, true);
+    this.currentPart++;
   }
 
   public void addIntPart(int v) {
