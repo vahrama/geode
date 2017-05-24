@@ -48,7 +48,8 @@ import org.apache.geode.test.junit.rules.serializable.SerializableErrorCollector
  * #40314: Filled up queue causes all publishers to block
  *
  * <p>
- * #37627: In case of out of order messages, (sequence Id violation), in spite of HARQ not full, the capacity (putPermits) of the HARQ exhausted.
+ * #37627: In case of out of order messages, (sequence Id violation), in spite of HARQ not full, the
+ * capacity (putPermits) of the HARQ exhausted.
  */
 @Category({IntegrationTest.class, ClientSubscriptionTest.class})
 public class BlockingHARegionJUnitTest {
@@ -117,7 +118,8 @@ public class BlockingHARegionJUnitTest {
   @Test
   public void testBoundedPuts() throws Exception {
     this.queueAttributes.setBlockingQueueCapacity(1);
-    HARegionQueue hrq = getHARegionQueueInstance(REGION, this.cache, this.queueAttributes, BLOCKING_HA_QUEUE, false);
+    HARegionQueue hrq = getHARegionQueueInstance(REGION, this.cache, this.queueAttributes,
+        BLOCKING_HA_QUEUE, false);
     hrq.setPrimary(true); // fix for 40314 - capacity constraint is checked for primary only
 
     startDoPuts(hrq, 1000);
@@ -135,7 +137,8 @@ public class BlockingHARegionJUnitTest {
   @Test
   public void testPutBeingBlocked() throws Exception {
     this.queueAttributes.setBlockingQueueCapacity(1);
-    HARegionQueue hrq = getHARegionQueueInstance(REGION, this.cache, this.queueAttributes, BLOCKING_HA_QUEUE, false);
+    HARegionQueue hrq = getHARegionQueueInstance(REGION, this.cache, this.queueAttributes,
+        BLOCKING_HA_QUEUE, false);
     hrq.setPrimary(true); // fix for 40314 - capacity constraint is checked for primary only
 
     Thread doPuts = startDoPuts(hrq, 2);
@@ -160,7 +163,8 @@ public class BlockingHARegionJUnitTest {
   @Test
   public void testConcurrentPutsNotExceedingLimit() throws Exception {
     this.queueAttributes.setBlockingQueueCapacity(10000);
-    HARegionQueue hrq = getHARegionQueueInstance(REGION, this.cache, this.queueAttributes, BLOCKING_HA_QUEUE, false);
+    HARegionQueue hrq = getHARegionQueueInstance(REGION, this.cache, this.queueAttributes,
+        BLOCKING_HA_QUEUE, false);
     hrq.setPrimary(true); // fix for 40314 - capacity constraint is checked for primary only
 
     Thread doPuts1 = startDoPuts(hrq, 20000, 1);
@@ -191,7 +195,8 @@ public class BlockingHARegionJUnitTest {
   @Test
   public void testConcurrentPutsTakesNotExceedingLimit() throws Exception {
     this.queueAttributes.setBlockingQueueCapacity(10000);
-    HARegionQueue hrq = getHARegionQueueInstance(REGION, this.cache, this.queueAttributes, BLOCKING_HA_QUEUE, false);
+    HARegionQueue hrq = getHARegionQueueInstance(REGION, this.cache, this.queueAttributes,
+        BLOCKING_HA_QUEUE, false);
     hrq.setPrimary(true); // fix for 40314 - capacity constraint is checked for primary only
 
     Thread doPuts1 = startDoPuts(hrq, 40000, 1);
@@ -234,7 +239,8 @@ public class BlockingHARegionJUnitTest {
   public void testHARQMaxCapacity_Bug37627() throws Exception {
     this.queueAttributes.setBlockingQueueCapacity(1);
     this.queueAttributes.setExpiryTime(180);
-    HARegionQueue hrq = getHARegionQueueInstance(REGION, this.cache, this.queueAttributes, BLOCKING_HA_QUEUE, false);
+    HARegionQueue hrq = getHARegionQueueInstance(REGION, this.cache, this.queueAttributes,
+        BLOCKING_HA_QUEUE, false);
     hrq.setPrimary(true); // fix for 40314 - capacity constraint is checked for primary only
 
     EventID event1 = new EventID(new byte[] {1}, 1, 2); // violation
