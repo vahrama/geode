@@ -14,18 +14,7 @@
  */
 package org.apache.geode.cache30;
 
-import org.junit.experimental.categories.Category;
-import org.junit.Test;
-
-import static org.junit.Assert.*;
-
-import org.apache.geode.test.dunit.cache.internal.JUnit4CacheTestCase;
-import org.apache.geode.test.dunit.internal.JUnit4DistributedTestCase;
-import org.apache.geode.test.junit.categories.DistributedTest;
-
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
+import static org.junit.Assert.assertTrue;
 
 import org.apache.geode.DataSerializable;
 import org.apache.geode.DataSerializer;
@@ -42,109 +31,128 @@ import org.apache.geode.distributed.DistributedSystem;
 import org.apache.geode.distributed.internal.InternalDistributedSystem;
 import org.apache.geode.test.dunit.Host;
 import org.apache.geode.test.dunit.VM;
+import org.apache.geode.test.dunit.cache.internal.JUnit4CacheTestCase;
+import org.apache.geode.test.junit.categories.DistributedTest;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 
 /**
  * Test to make sure cache values are lazily deserialized
  *
+ * #34948: distributed cache values are always getting deserialized
+ *
  * @since GemFire 5.0
  */
 @Category(DistributedTest.class)
-public class Bug34948DUnitTest extends JUnit4CacheTestCase {
+public class ValuesAreLazilyDeserializedRegressionTest extends JUnit4CacheTestCase {
 
-  public Bug34948DUnitTest() {
-    super();
-  }
+  private static final String REGION_NAME = "bug34948";
 
-  ////////////////////// Test Methods //////////////////////
+  // TODO: value of lastCallback is not validated
+  private static Object lastCallback = null;
 
-  private VM getOtherVm() {
-    Host host = Host.getHost(0);
-    return host.getVM(0);
-  }
+  private VM otherVM;
 
-  static protected Object lastCallback = null;
-
-  private void doCreateOtherVm() {
-    VM vm = getOtherVm();
-    vm.invoke(new CacheSerializableRunnable("create root") {
-      public void run2() throws CacheException {
-        getSystem();
-        AttributesFactory af = new AttributesFactory();
-        af.setScope(Scope.DISTRIBUTED_ACK);
-        af.setDataPolicy(DataPolicy.PRELOADED);
-        CacheListener cl = new CacheListenerAdapter() {
-          public void afterCreate(EntryEvent event) {
-            // getLogWriter().info("afterCreate " + event.getKey());
-            if (event.getCallbackArgument() != null) {
-              lastCallback = event.getCallbackArgument();
-            }
-          }
-
-          public void afterUpdate(EntryEvent event) {
-            // getLogWriter().info("afterUpdate " + event.getKey());
-            if (event.getCallbackArgument() != null) {
-              lastCallback = event.getCallbackArgument();
-            }
-          }
-
-          public void afterInvalidate(EntryEvent event) {
-            if (event.getCallbackArgument() != null) {
-              lastCallback = event.getCallbackArgument();
-            }
-          }
-
-          public void afterDestroy(EntryEvent event) {
-            if (event.getCallbackArgument() != null) {
-              lastCallback = event.getCallbackArgument();
-            }
-          }
-        };
-        af.setCacheListener(cl);
-        createRootRegion("bug34948", af.create());
-      }
-    });
+  @Before
+  public void before() throws Exception {
+    this.otherVM = Host.getHost(0).getVM(0);
   }
 
   /**
    * Make sure that value is only deserialized in cache whose application asks for the value.
    */
   @Test
-  public void testBug34948() throws CacheException {
-    final AttributesFactory factory = new AttributesFactory();
+  public void valueShouldBeLazilyDeserialized() throws CacheException {
+    AttributesFactory factory = new AttributesFactory();
     factory.setScope(Scope.DISTRIBUTED_ACK);
     factory.setDataPolicy(DataPolicy.PRELOADED);
-    final Region r = createRootRegion("bug34948", factory.create());
+
+    Region<String, HomeBoy> region = createRootRegion(REGION_NAME, factory.create());
 
     // before gii
-    r.put("key1", new HomeBoy());
+    region.put("key1", new HomeBoy());
 
-    doCreateOtherVm();
+    doCreateOtherVm(this.otherVM);
 
     // after gii
-    r.put("key2", new HomeBoy());
+    region.put("key2", new HomeBoy());
 
-    r.localDestroy("key1");
-    r.localDestroy("key2");
+    region.localDestroy("key1");
+    region.localDestroy("key2");
 
-    Object o = r.get("key1");
-    assertTrue(r.get("key1") instanceof HomeBoy);
-    assertTrue(r.get("key2") == null); // preload will not distribute
+    Object value = region.get("key1");
+    assertTrue(region.get("key1") instanceof HomeBoy);
+    assertTrue(region.get("key2") == null); // preload will not distribute
 
-    // @todo darrel: add putAll test once it does not deserialize
+    // TODO: add putAll test once it does not deserialize
   }
 
-  public static class HomeBoy implements DataSerializable {
+  private void doCreateOtherVm(VM otherVM) {
+    otherVM.invoke(new CacheSerializableRunnable("create root") {
+
+      @Override
+      public void run2() throws CacheException {
+        getSystem();
+
+        CacheListener<String, HomeBoy> listener = new CacheListenerAdapter<String, HomeBoy>() {
+          @Override
+          public void afterCreate(EntryEvent event) {
+            if (event.getCallbackArgument() != null) {
+              lastCallback = event.getCallbackArgument();
+            }
+          }
+
+          @Override
+          public void afterUpdate(EntryEvent event) {
+            if (event.getCallbackArgument() != null) {
+              lastCallback = event.getCallbackArgument();
+            }
+          }
+
+          @Override
+          public void afterInvalidate(EntryEvent event) {
+            if (event.getCallbackArgument() != null) {
+              lastCallback = event.getCallbackArgument();
+            }
+          }
+
+          @Override
+          public void afterDestroy(EntryEvent event) {
+            if (event.getCallbackArgument() != null) {
+              lastCallback = event.getCallbackArgument();
+            }
+          }
+        };
+
+        AttributesFactory<String, HomeBoy> factory = new AttributesFactory<>();
+        factory.setScope(Scope.DISTRIBUTED_ACK);
+        factory.setDataPolicy(DataPolicy.PRELOADED);
+        factory.setCacheListener(listener);
+
+        createRootRegion(REGION_NAME, factory.create());
+      }
+    });
+  }
+
+  private static class HomeBoy implements DataSerializable {
     public HomeBoy() {}
 
+    @Override
     public void toData(DataOutput out) throws IOException {
       DistributedMember me = InternalDistributedSystem.getAnyInstance().getDistributedMember();
       DataSerializer.writeObject(me, out);
     }
 
+    @Override
     public void fromData(DataInput in) throws IOException, ClassNotFoundException {
       DistributedSystem ds = InternalDistributedSystem.getAnyInstance();
       DistributedMember me = ds.getDistributedMember();
-      DistributedMember hb = (DistributedMember) DataSerializer.readObject(in);
+      DistributedMember hb = DataSerializer.readObject(in);
       if (me.equals(hb)) {
         ds.getLogWriter().info("HomeBoy was deserialized on his home");
       } else {

@@ -14,18 +14,7 @@
  */
 package org.apache.geode.cache30;
 
-import org.junit.experimental.categories.Category;
-import org.junit.Test;
-
-import static org.junit.Assert.*;
-
-import org.apache.geode.test.dunit.cache.internal.JUnit4CacheTestCase;
-import org.apache.geode.test.dunit.internal.JUnit4DistributedTestCase;
-import org.apache.geode.test.junit.categories.DistributedTest;
-
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
+import static org.junit.Assert.assertTrue;
 
 import org.apache.geode.DataSerializable;
 import org.apache.geode.DataSerializer;
@@ -41,103 +30,124 @@ import org.apache.geode.distributed.DistributedSystem;
 import org.apache.geode.distributed.internal.InternalDistributedSystem;
 import org.apache.geode.test.dunit.Host;
 import org.apache.geode.test.dunit.VM;
+import org.apache.geode.test.dunit.cache.internal.JUnit4CacheTestCase;
+import org.apache.geode.test.junit.categories.DistributedTest;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 
 /**
  * Test to make sure PR cache values are lazily deserialized
  *
+ * #38013: PR regions do deserialization on remote bucket during get causing NoClassDefFoundError
+ *
+ * Remote PartitionedRegion values should not be deserialized
+ *
  * @since GemFire 5.0
  */
 @Category(DistributedTest.class)
-public class Bug38013DUnitTest extends JUnit4CacheTestCase {
+public class RemotePRValuesAreNotDeserializedRegressionTest extends JUnit4CacheTestCase {
 
-  public Bug38013DUnitTest() {
-    super();
-  }
+  private static final String REGION_NAME = "bug38013";
 
-  ////////////////////// Test Methods //////////////////////
+  // TODO: value of lastCallback is not validated
+  private static Object lastCallback = null;
 
-  private VM getOtherVm() {
-    Host host = Host.getHost(0);
-    return host.getVM(0);
-  }
+  private VM otherVM;
 
-  static protected Object lastCallback = null;
-
-  private void doCreateOtherVm() {
-    VM vm = getOtherVm();
-    vm.invoke(new CacheSerializableRunnable("create root") {
-      public void run2() throws CacheException {
-        getSystem();
-        AttributesFactory af = new AttributesFactory();
-        CacheListener cl = new CacheListenerAdapter() {
-          public void afterCreate(EntryEvent event) {
-            // getLogWriter().info("afterCreate " + event.getKey());
-            if (event.getCallbackArgument() != null) {
-              lastCallback = event.getCallbackArgument();
-            }
-          }
-
-          public void afterUpdate(EntryEvent event) {
-            // getLogWriter().info("afterUpdate " + event.getKey());
-            if (event.getCallbackArgument() != null) {
-              lastCallback = event.getCallbackArgument();
-            }
-          }
-
-          public void afterInvalidate(EntryEvent event) {
-            if (event.getCallbackArgument() != null) {
-              lastCallback = event.getCallbackArgument();
-            }
-          }
-
-          public void afterDestroy(EntryEvent event) {
-            if (event.getCallbackArgument() != null) {
-              lastCallback = event.getCallbackArgument();
-            }
-          }
-        };
-        af.setCacheListener(cl);
-        // create a pr with a data store
-        PartitionAttributesFactory paf = new PartitionAttributesFactory();
-        paf.setRedundantCopies(0);
-        // use defaults so this is a data store
-        af.setPartitionAttributes(paf.create());
-        createRootRegion("bug38013", af.create());
-      }
-    });
+  @Before
+  public void before() throws Exception {
+    this.otherVM = Host.getHost(0).getVM(0);
   }
 
   /**
    * Make sure that value is only deserialized in cache whose application asks for the value.
    */
   @Test
-  public void testBug38013() throws CacheException {
-    final AttributesFactory factory = new AttributesFactory();
-    PartitionAttributesFactory paf = new PartitionAttributesFactory();
-    paf.setRedundantCopies(0);
-    paf.setLocalMaxMemory(0); // make it an accessor
-    factory.setPartitionAttributes(paf.create());
-    final Region r = createRootRegion("bug38013", factory.create());
+  public void remotePRValuesShouldNotBeDeserialized() throws Exception {
+    PartitionAttributesFactory partitionAttributesFactory = new PartitionAttributesFactory();
+    partitionAttributesFactory.setRedundantCopies(0);
+    partitionAttributesFactory.setLocalMaxMemory(0); // make it an accessor
 
-    doCreateOtherVm();
+    AttributesFactory factory = new AttributesFactory();
+    factory.setPartitionAttributes(partitionAttributesFactory.create());
 
-    r.put("key1", new HomeBoy());
+    Region<String, HomeBoy> region = createRootRegion(REGION_NAME, factory.create());
 
-    assertTrue(r.get("key1") instanceof HomeBoy);
+    doCreateOtherVm(this.otherVM);
+
+    region.put("key1", new HomeBoy());
+
+    assertTrue(region.get("key1") instanceof HomeBoy);
   }
 
-  public static class HomeBoy implements DataSerializable {
+  private void doCreateOtherVm(VM otherVM) {
+    otherVM.invoke(new CacheSerializableRunnable("create root") {
+      public void run2() throws CacheException {
+        getSystem();
+
+        CacheListener listener = new CacheListenerAdapter() {
+          @Override
+          public void afterCreate(EntryEvent event) {
+            if (event.getCallbackArgument() != null) {
+              lastCallback = event.getCallbackArgument();
+            }
+          }
+
+          @Override
+          public void afterUpdate(EntryEvent event) {
+            if (event.getCallbackArgument() != null) {
+              lastCallback = event.getCallbackArgument();
+            }
+          }
+
+          @Override
+          public void afterInvalidate(EntryEvent event) {
+            if (event.getCallbackArgument() != null) {
+              lastCallback = event.getCallbackArgument();
+            }
+          }
+
+          @Override
+          public void afterDestroy(EntryEvent event) {
+            if (event.getCallbackArgument() != null) {
+              lastCallback = event.getCallbackArgument();
+            }
+          }
+        };
+
+        AttributesFactory factory = new AttributesFactory();
+        factory.setCacheListener(listener);
+
+        // create a pr with a data store
+        PartitionAttributesFactory partitionAttributesFactory = new PartitionAttributesFactory();
+        partitionAttributesFactory.setRedundantCopies(0);
+
+        // use defaults so this is a data store
+        factory.setPartitionAttributes(partitionAttributesFactory.create());
+        createRootRegion(REGION_NAME, factory.create());
+      }
+    });
+  }
+
+  private static class HomeBoy implements DataSerializable {
     public HomeBoy() {}
 
+    @Override
     public void toData(DataOutput out) throws IOException {
       DistributedMember me = InternalDistributedSystem.getAnyInstance().getDistributedMember();
       DataSerializer.writeObject(me, out);
     }
 
+    @Override
     public void fromData(DataInput in) throws IOException, ClassNotFoundException {
       DistributedSystem ds = InternalDistributedSystem.getAnyInstance();
       DistributedMember me = ds.getDistributedMember();
-      DistributedMember hb = (DistributedMember) DataSerializer.readObject(in);
+      DistributedMember hb = DataSerializer.readObject(in);
       if (me.equals(hb)) {
         ds.getLogWriter().info("HomeBoy was deserialized on his home");
       } else {
