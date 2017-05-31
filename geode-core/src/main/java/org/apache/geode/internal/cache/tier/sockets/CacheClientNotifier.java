@@ -2085,8 +2085,8 @@ public class CacheClientNotifier {
               statistics.incCompiledQueryCount(-1);
               if (isDebugEnabled) {
                 logger.debug("Removed compiled query from ccn.compliedQueries list. Query: "
-                             + q.getQueryString() + ". Total compiled queries are : "
-                             + statistics.getCompiledQueryCount());
+                    + q.getQueryString() + ". Total compiled queries are : "
+                    + statistics.getCompiledQueryCount());
               }
             }
           }
