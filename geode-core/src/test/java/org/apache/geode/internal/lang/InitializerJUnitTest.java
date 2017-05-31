@@ -29,7 +29,7 @@ import org.apache.geode.test.junit.categories.UnitTest;
 
 /**
  * The InitializerJUnitTest class is a test suite of test cases testing the contract and
- * functionality of the Initializer utility class.
+ * functionality of the ConfigInitialization utility class.
  * <p/>
  * 
  * @see org.apache.geode.internal.lang.Initializer

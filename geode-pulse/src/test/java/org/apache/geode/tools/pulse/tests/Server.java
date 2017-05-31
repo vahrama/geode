@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
  * agreements. See the NOTICE file distributed with this work for additional information regarding
  * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
@@ -12,7 +11,6 @@
  * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
- *
  */
 package org.apache.geode.tools.pulse.tests;
 
@@ -36,6 +34,8 @@ import javax.management.remote.JMXConnectorServer;
 import javax.management.remote.JMXConnectorServerFactory;
 import javax.management.remote.JMXServiceURL;
 
+import org.apache.geode.internal.security.DisabledSecurityService;
+import org.apache.geode.internal.security.SecurityService;
 import org.apache.geode.tools.pulse.internal.data.PulseConstants;
 import org.apache.geode.security.TestSecurityManager;
 import org.apache.shiro.SecurityUtils;
@@ -58,7 +58,8 @@ public class Server {
   private JMXConnectorServer cs;
   private String propFile = null;
 
-  public Server(int jmxPort, String properties, String jsonAuthFile) throws Exception {
+  public Server(int jmxPort, String properties, String jsonAuthFile,
+                final SecurityService securityService) throws Exception {
     this.propFile = properties;
     mbs = ManagementFactory.getPlatformMBeanServer();
     url = new JMXServiceURL(formJMXServiceURLString(DEFAULT_HOST, jmxPort));
@@ -79,16 +80,16 @@ public class Server {
       SecurityUtils.setSecurityManager(securityManager);
 
       // register the AccessControll bean
-      AccessControlMBean acc = new AccessControlMBean();
+      AccessControlMBean acc = new AccessControlMBean(new DisabledSecurityService());
       ObjectName accessControlMBeanON = new ObjectName(ResourceConstants.OBJECT_NAME_ACCESSCONTROL);
       MBeanServer platformMBeanServer = ManagementFactory.getPlatformMBeanServer();
       platformMBeanServer.registerMBean(acc, accessControlMBeanON);
 
       // wire in the authenticator and authorizaton
-      JMXShiroAuthenticator interceptor = new JMXShiroAuthenticator();
+      JMXShiroAuthenticator interceptor = new JMXShiroAuthenticator(securityService);
       env.put(JMXConnectorServer.AUTHENTICATOR, interceptor);
       cs = JMXConnectorServerFactory.newJMXConnectorServer(url, env, mbs);
-      cs.setMBeanServerForwarder(new MBeanServerWrapper());
+      cs.setMBeanServerForwarder(new MBeanServerWrapper(securityService));
 
       // set up the AccessControlMXBean
 
@@ -224,10 +225,11 @@ public class Server {
     return propVal.split(" ");
   }
 
-  public static Server createServer(int jmxPort, String properties, String jsonAuthFile) {
+  public static Server createServer(int jmxPort, String properties, String jsonAuthFile,
+                                    final SecurityService securityService) {
     Server s = null;
     try {
-      s = new Server(jmxPort, properties, jsonAuthFile);
+      s = new Server(jmxPort, properties, jsonAuthFile, securityService);
     } catch (Exception e) {
       e.printStackTrace();
       return null;

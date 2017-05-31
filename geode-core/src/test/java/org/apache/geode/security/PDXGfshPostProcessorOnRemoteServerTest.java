@@ -102,7 +102,7 @@ public class PDXGfshPostProcessorOnRemoteServerTest {
 
     serverVM.invoke(() -> {
       PDXPostProcessor pp =
-          (PDXPostProcessor) SecurityService.getSecurityService().getPostProcessor();
+          (PDXPostProcessor) LocatorServerStartupRule.serverStarter.getCache().getSecurityService().getPostProcessor();
       // verify that the post processor is called 6 times. (5 for the query, 1 for the get)
       assertEquals(pp.getCount(), 6);
     });

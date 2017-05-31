@@ -22,7 +22,9 @@ import static org.junit.Assert.assertTrue;
 import org.apache.geode.cache.Cache;
 import org.apache.geode.cache.CacheFactory;
 import org.apache.geode.distributed.ConfigurationProperties;
+import org.apache.geode.internal.cache.InternalCache;
 import org.apache.geode.internal.security.SecurityService;
+import org.apache.geode.internal.security.SecurityServiceFactory;
 import org.apache.geode.security.templates.DummyAuthenticator;
 import org.apache.geode.test.junit.categories.IntegrationTest;
 import org.apache.geode.test.junit.categories.SecurityTest;
@@ -36,22 +38,21 @@ import java.util.Properties;
 @Category({IntegrationTest.class, SecurityTest.class})
 public class CacheFactoryWithSecurityObjectTest {
 
-  private SecurityService securityService;
   private SecurityManager simpleSecurityManager;
   private Properties properties = new Properties();
-  Cache cache;
+  private InternalCache cache;
 
   @Before
   public void before() throws Exception {
-    securityService = SecurityService.getSecurityService();
     simpleSecurityManager = new SimpleTestSecurityManager();
     properties.setProperty("mcast-port", "0");
   }
 
   @Test
   public void testCreateCacheWithSecurityManager() throws Exception {
-    cache = new CacheFactory(properties).setSecurityManager(simpleSecurityManager)
+    cache = (InternalCache) new CacheFactory(properties).setSecurityManager(simpleSecurityManager)
         .setPostProcessor(null).create();
+    SecurityService securityService = cache.getSecurityService();
     assertTrue(securityService.isIntegratedSecurity());
     assertFalse(securityService.needPostProcess());
     assertNotNull(securityService.getSecurityManager());
@@ -59,8 +60,9 @@ public class CacheFactoryWithSecurityObjectTest {
 
   @Test
   public void testCreateCacheWithPostProcessor() throws Exception {
-    cache = new CacheFactory(properties).setPostProcessor(new TestPostProcessor())
+    cache = (InternalCache) new CacheFactory(properties).setPostProcessor(new TestPostProcessor())
         .setSecurityManager(null).create();
+    SecurityService securityService = cache.getSecurityService();
     assertFalse(securityService.isIntegratedSecurity());
     assertFalse(securityService.needPostProcess());
     assertNotNull(securityService.getPostProcessor());
@@ -71,8 +73,10 @@ public class CacheFactoryWithSecurityObjectTest {
     properties.setProperty(ConfigurationProperties.SECURITY_CLIENT_AUTHENTICATOR,
         DummyAuthenticator.class.getName());
 
-    cache = new CacheFactory(properties).setSecurityManager(simpleSecurityManager)
+    cache = (InternalCache) new CacheFactory(properties).setSecurityManager(simpleSecurityManager)
         .setPostProcessor(new TestPostProcessor()).create();
+
+    SecurityService securityService = cache.getSecurityService();
 
     assertTrue(securityService.isIntegratedSecurity());
     assertTrue(securityService.isClientSecurityRequired());

@@ -14,6 +14,7 @@
  */
 package org.apache.geode.management.internal.cli.remote;
 
+import org.apache.geode.internal.security.DisabledSecurityService;
 import org.apache.geode.internal.security.IntegratedSecurityService;
 import org.apache.geode.internal.security.SecurityService;
 import org.apache.geode.management.cli.CommandProcessingException;
@@ -49,16 +50,17 @@ public class CommandProcessor {
 
   private volatile boolean isStopped = false;
 
-  private SecurityService securityService = IntegratedSecurityService.getSecurityService();
+  private final SecurityService securityService;
 
   public CommandProcessor() throws ClassNotFoundException, IOException {
-    this(null);
+    this(null, new DisabledSecurityService());
   }
 
-  public CommandProcessor(Properties cacheProperties) throws ClassNotFoundException, IOException {
+  public CommandProcessor(Properties cacheProperties, SecurityService securityService) throws ClassNotFoundException, IOException {
     this.gfshParser = new GfshParser(cacheProperties);
     this.executionStrategy = new RemoteExecutionStrategy();
     this.logWrapper = LogWrapper.getInstance();
+    this.securityService = securityService;
   }
 
   protected RemoteExecutionStrategy getExecutionStrategy() {

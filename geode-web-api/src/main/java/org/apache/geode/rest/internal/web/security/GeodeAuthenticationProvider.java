@@ -16,6 +16,9 @@
 
 package org.apache.geode.rest.internal.web.security;
 
+import org.apache.geode.internal.cache.GemFireCacheImpl;
+import org.apache.geode.internal.cache.InternalCache;
+import org.apache.geode.internal.security.DisabledSecurityService;
 import org.apache.geode.internal.security.SecurityService;
 import org.apache.geode.management.internal.security.ResourceConstants;
 import org.apache.geode.security.GemFireSecurityException;
@@ -32,7 +35,26 @@ import java.util.Properties;
 
 @Component
 public class GeodeAuthenticationProvider implements AuthenticationProvider {
-  private SecurityService securityService = SecurityService.getSecurityService();
+
+  private final SecurityService securityService;
+
+  public GeodeAuthenticationProvider() {
+    // TODO: can we pass SecurityService in?
+    this.securityService = findSecurityService();
+  }
+
+  private static SecurityService findSecurityService() {
+    InternalCache cache = GemFireCacheImpl.getInstance();
+    if (cache != null) {
+      return cache.getSecurityService();
+    } else {
+      return new DisabledSecurityService();
+    }
+  }
+
+  public SecurityService getSecurityService() {
+    return this.securityService;
+  }
 
   @Override
   public Authentication authenticate(Authentication authentication) throws AuthenticationException {

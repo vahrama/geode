@@ -50,7 +50,6 @@ import java.util.Set;
  */
 @SuppressWarnings("unused")
 public abstract class AbstractCommandsSupport implements CommandMarker {
-  protected static SecurityService securityService = SecurityService.getSecurityService();
 
   protected static void assertArgument(final boolean valid, final String message,
       final Object... args) {

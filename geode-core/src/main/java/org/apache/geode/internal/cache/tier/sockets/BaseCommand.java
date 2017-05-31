@@ -115,8 +115,6 @@ public abstract class BaseCommand implements Command {
 
   private static final Semaphore INCOMING_MSG_LIMITER;
 
-  protected SecurityService securityService = IntegratedSecurityService.getSecurityService();
-
   static {
     Semaphore semaphore;
     if (MAX_INCOMING_DATA > 0) {
@@ -140,7 +138,7 @@ public abstract class BaseCommand implements Command {
   }
 
   @Override
-  public void execute(Message clientMessage, ServerConnection serverConnection) {
+  public void execute(Message clientMessage, ServerConnection serverConnection, SecurityService securityService) {
     // Read the request and update the statistics
     long start = DistributionStats.getStatTime();
     if (EntryLogger.isEnabled() && serverConnection != null) {
@@ -156,13 +154,13 @@ public abstract class BaseCommand implements Command {
         TXStateProxy tx = null;
         try {
           tx = txMgr.masqueradeAs(clientMessage, member, false);
-          cmdExecute(clientMessage, serverConnection, start);
+          cmdExecute(clientMessage, serverConnection, securityService, start);
           tx.updateProxyServer(txMgr.getMemberId());
         } finally {
           txMgr.unmasquerade(tx);
         }
       } else {
-        cmdExecute(clientMessage, serverConnection, start);
+        cmdExecute(clientMessage, serverConnection, securityService, start);
       }
 
     } catch (TransactionException | CopyException | SerializationException | CacheWriterException
@@ -265,8 +263,7 @@ public abstract class BaseCommand implements Command {
     return tag;
   }
 
-  public abstract void cmdExecute(Message clientMessage, ServerConnection serverConnection,
-      long start) throws IOException, ClassNotFoundException, InterruptedException;
+  public abstract void cmdExecute(final Message clientMessage, final ServerConnection serverConnection, final SecurityService securityService, final long start) throws IOException, ClassNotFoundException, InterruptedException;
 
   protected void writeReply(Message origMsg, ServerConnection serverConnection) throws IOException {
     Message replyMsg = serverConnection.getReplyMessage();

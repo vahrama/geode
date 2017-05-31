@@ -17,6 +17,7 @@ package org.apache.geode.management.internal.cli.commands;
 import org.apache.geode.SystemFailure;
 import org.apache.geode.cache.execute.ResultCollector;
 import org.apache.geode.distributed.DistributedMember;
+import org.apache.geode.internal.security.SecurityService;
 import org.apache.geode.management.cli.CliMetaData;
 import org.apache.geode.management.cli.ConverterHint;
 import org.apache.geode.management.cli.Result;
@@ -84,6 +85,7 @@ public class DeployCommands extends AbstractCommandsSupport {
 
       // since deploy function can potentially do a lot of damage to security, this action should
       // require these following privileges
+      SecurityService securityService = getCache().getSecurityService();
       securityService.authorizeClusterManage();
       securityService.authorizeClusterWrite();
       securityService.authorizeDataManage();

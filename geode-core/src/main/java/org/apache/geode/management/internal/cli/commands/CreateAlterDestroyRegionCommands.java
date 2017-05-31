@@ -89,8 +89,6 @@ public class CreateAlterDestroyRegionCommands extends AbstractCommandsSupport {
 
   public static final Set<RegionShortcut> PERSISTENT_OVERFLOW_SHORTCUTS = new TreeSet<>();
 
-  private SecurityService securityService = IntegratedSecurityService.getSecurityService();
-
   static {
     PERSISTENT_OVERFLOW_SHORTCUTS.add(RegionShortcut.PARTITION_PERSISTENT);
     PERSISTENT_OVERFLOW_SHORTCUTS.add(RegionShortcut.PARTITION_REDUNDANT_PERSISTENT);
@@ -426,7 +424,7 @@ public class CreateAlterDestroyRegionCommands extends AbstractCommandsSupport {
     Result result;
     AtomicReference<XmlEntity> xmlEntity = new AtomicReference<>();
 
-    this.securityService.authorizeRegionManage(regionPath);
+    getCache().getSecurityService().authorizeRegionManage(regionPath);
 
     try {
       InternalCache cache = getCache();

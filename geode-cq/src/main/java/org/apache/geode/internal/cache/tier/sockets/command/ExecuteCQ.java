@@ -39,6 +39,7 @@ import org.apache.geode.internal.cache.tier.sockets.ServerConnection;
 import org.apache.geode.internal.i18n.LocalizedStrings;
 import org.apache.geode.internal.logging.LogService;
 import org.apache.geode.internal.security.AuthorizeRequest;
+import org.apache.geode.internal.security.SecurityService;
 
 public class ExecuteCQ extends BaseCQCommand {
   protected static final Logger logger = LogService.getLogger();
@@ -52,7 +53,7 @@ public class ExecuteCQ extends BaseCQCommand {
   private ExecuteCQ() {}
 
   @Override
-  public void cmdExecute(Message clientMessage, ServerConnection serverConnection, long start)
+  public void cmdExecute(final Message clientMessage, final ServerConnection serverConnection, final SecurityService securityService, long start)
       throws IOException, InterruptedException {
     AcceptorImpl acceptor = serverConnection.getAcceptor();
     CachedRegionHelper crHelper = serverConnection.getCachedRegionHelper();
@@ -109,7 +110,7 @@ public class ExecuteCQ extends BaseCQCommand {
           acceptor.getCacheClientNotifier(), isDurable, false, 0, null);
     } catch (CqException cqe) {
       sendCqResponse(MessageType.CQ_EXCEPTION_TYPE, "", clientMessage.getTransactionId(), cqe,
-          serverConnection);
+          serverConnection, securityService);
       return;
     } catch (Exception e) {
       writeChunkedException(clientMessage, e, serverConnection);
@@ -132,7 +133,7 @@ public class ExecuteCQ extends BaseCQCommand {
       }
       ((DefaultQuery) query).setIsCqQuery(true);
       successQuery = processQuery(clientMessage, query, cqQueryString, cqRegionNames, start,
-          cqQuery, executeCQContext, serverConnection, sendResults);
+          cqQuery, executeCQContext, serverConnection, sendResults, securityService);
 
       // Update the CQ statistics.
       cqQuery.getVsdStats().setCqInitialResultsTime((DistributionStats.getStatTime()) - oldstart);
@@ -154,7 +155,7 @@ public class ExecuteCQ extends BaseCQCommand {
       // Send OK to client
       sendCqResponse(MessageType.REPLY,
           LocalizedStrings.ExecuteCQ_CQ_CREATED_SUCCESSFULLY.toLocalizedString(),
-          clientMessage.getTransactionId(), null, serverConnection);
+          clientMessage.getTransactionId(), null, serverConnection, securityService);
 
       long start2 = DistributionStats.getStatTime();
       stats.incProcessCreateCqTime(start2 - oldstart);

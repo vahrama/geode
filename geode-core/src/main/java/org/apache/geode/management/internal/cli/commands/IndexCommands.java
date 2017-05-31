@@ -84,8 +84,6 @@ public class IndexCommands extends AbstractCommandsSupport {
   private static final Set<IndexInfo> indexDefinitions =
       Collections.synchronizedSet(new HashSet<IndexInfo>());
 
-  private SecurityService securityService = IntegratedSecurityService.getSecurityService();
-
   @Override
   protected Set<DistributedMember> getMembers(final InternalCache cache) {
     // TODO determine what this does (as it is untested and unmockable!)
@@ -202,7 +200,7 @@ public class IndexCommands extends AbstractCommandsSupport {
     Result result = null;
     AtomicReference<XmlEntity> xmlEntity = new AtomicReference<>();
 
-    this.securityService.authorizeRegionManage(regionPath);
+    getCache().getSecurityService().authorizeRegionManage(regionPath);
     try {
       final Cache cache = CacheFactory.getAnyInstance();
 
@@ -361,9 +359,9 @@ public class IndexCommands extends AbstractCommandsSupport {
     // requires data manage permission on all regions
     if (StringUtils.isNotBlank(regionPath)) {
       regionName = regionPath.startsWith("/") ? regionPath.substring(1) : regionPath;
-      this.securityService.authorizeRegionManage(regionName);
+      getCache().getSecurityService().authorizeRegionManage(regionName);
     } else {
-      this.securityService.authorizeDataManage();
+      getCache().getSecurityService().authorizeDataManage();
     }
 
     IndexInfo indexInfo = new IndexInfo(indexName, regionName);
@@ -485,7 +483,7 @@ public class IndexCommands extends AbstractCommandsSupport {
     Result result = null;
     XmlEntity xmlEntity = null;
 
-    this.securityService.authorizeRegionManage(regionPath);
+    getCache().getSecurityService().authorizeRegionManage(regionPath);
 
     int idxType = IndexInfo.RANGE_INDEX;
 

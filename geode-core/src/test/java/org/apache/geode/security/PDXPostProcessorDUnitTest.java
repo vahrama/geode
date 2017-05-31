@@ -40,6 +40,7 @@ import org.apache.geode.test.dunit.IgnoredException;
 import org.apache.geode.test.dunit.VM;
 import org.apache.geode.test.dunit.internal.JUnit4DistributedTestCase;
 import org.apache.geode.test.dunit.rules.GfshShellConnectionRule;
+import org.apache.geode.test.dunit.rules.LocatorServerStartupRule;
 import org.apache.geode.test.dunit.rules.ServerStarterRule;
 import org.apache.geode.test.junit.categories.DistributedTest;
 import org.apache.geode.test.junit.categories.SecurityTest;
@@ -114,7 +115,7 @@ public class PDXPostProcessorDUnitTest extends JUnit4DistributedTestCase {
 
     // this makes sure PostProcessor is getting called
     PDXPostProcessor pp =
-        (PDXPostProcessor) SecurityService.getSecurityService().getPostProcessor();
+        (PDXPostProcessor) server.getCache().getSecurityService().getPostProcessor();
     assertEquals(pp.getCount(), 2);
   }
 
@@ -149,7 +150,7 @@ public class PDXPostProcessorDUnitTest extends JUnit4DistributedTestCase {
 
     // this makes sure PostProcessor is getting called
     PDXPostProcessor pp =
-        (PDXPostProcessor) SecurityService.getSecurityService().getPostProcessor();
+        (PDXPostProcessor) server.getCache().getSecurityService().getPostProcessor();
     assertEquals(pp.getCount(), 2);
   }
 
@@ -190,7 +191,7 @@ public class PDXPostProcessorDUnitTest extends JUnit4DistributedTestCase {
     // wait for events to fire
     Awaitility.await().atMost(1, TimeUnit.SECONDS);
     PDXPostProcessor pp =
-        (PDXPostProcessor) SecurityService.getSecurityService().getPostProcessor();
+        (PDXPostProcessor) server.getCache().getSecurityService().getPostProcessor();
     assertEquals(pp.getCount(), 2);
   }
 
@@ -226,7 +227,7 @@ public class PDXPostProcessorDUnitTest extends JUnit4DistributedTestCase {
     });
 
     PDXPostProcessor pp =
-        (PDXPostProcessor) SecurityService.getSecurityService().getPostProcessor();
+        (PDXPostProcessor) LocatorServerStartupRule.serverStarter.getCache().getSecurityService().getPostProcessor();
     assertEquals(pp.getCount(), 4);
   }
 

@@ -15,7 +15,7 @@
 package org.apache.geode.internal.lang;
 
 /**
- * The Initializer class is a utility class to identify Initable objects and initialize them by
+ * The ConfigInitialization class is a utility class to identify Initable objects and initialize them by
  * calling their init method.
  * <p/>
  * 

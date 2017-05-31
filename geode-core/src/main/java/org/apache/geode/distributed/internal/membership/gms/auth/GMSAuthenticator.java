@@ -14,33 +14,40 @@
  */
 package org.apache.geode.distributed.internal.membership.gms.auth;
 
-import static org.apache.geode.distributed.ConfigurationProperties.*;
-import static org.apache.geode.internal.i18n.LocalizedStrings.*;
-
-import java.security.Principal;
-import java.util.Properties;
+import static org.apache.geode.distributed.ConfigurationProperties.SECURITY_PEER_AUTHENTICATOR;
+import static org.apache.geode.distributed.ConfigurationProperties.SECURITY_PEER_AUTH_INIT;
+import static org.apache.geode.internal.i18n.LocalizedStrings.AUTH_PEER_AUTHENTICATION_FAILED;
+import static org.apache.geode.internal.i18n.LocalizedStrings.AUTH_PEER_AUTHENTICATION_FAILED_WITH_EXCEPTION;
+import static org.apache.geode.internal.i18n.LocalizedStrings.AUTH_PEER_AUTHENTICATION_MISSING_CREDENTIALS;
+import static org.apache.geode.internal.i18n.LocalizedStrings.HandShake_FAILED_TO_ACQUIRE_AUTHENTICATOR_OBJECT;
 
 import org.apache.commons.lang.StringUtils;
-
 import org.apache.geode.LogWriter;
 import org.apache.geode.distributed.DistributedMember;
+import org.apache.geode.distributed.internal.InternalDistributedSystem;
 import org.apache.geode.distributed.internal.membership.InternalDistributedMember;
 import org.apache.geode.distributed.internal.membership.NetView;
 import org.apache.geode.distributed.internal.membership.gms.Services;
 import org.apache.geode.distributed.internal.membership.gms.interfaces.Authenticator;
+import org.apache.geode.internal.cache.CacheConfig;
+import org.apache.geode.internal.cache.GemFireCacheImpl;
+import org.apache.geode.internal.cache.InternalCache;
 import org.apache.geode.internal.cache.tier.sockets.HandShake;
 import org.apache.geode.internal.i18n.LocalizedStrings;
 import org.apache.geode.internal.logging.InternalLogWriter;
-import org.apache.geode.internal.security.IntegratedSecurityService;
 import org.apache.geode.internal.security.SecurityService;
+import org.apache.geode.internal.security.SecurityServiceFactory;
 import org.apache.geode.security.AuthenticationFailedException;
 import org.apache.geode.security.GemFireSecurityException;
+
+import java.security.Principal;
+import java.util.Properties;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class GMSAuthenticator implements Authenticator {
 
   private Services services;
   private Properties securityProps;
-  private SecurityService securityService = IntegratedSecurityService.getSecurityService();
 
   @Override
   public void init(Services s) {
@@ -98,6 +105,8 @@ public class GMSAuthenticator implements Authenticator {
    */
   String authenticate(DistributedMember member, Properties credentials, Properties secProps)
       throws AuthenticationFailedException {
+    SecurityService securityService = getSecurityService();
+
     // For older systems, locator might be started without cache, so secureService may not be
     // initialized here. We need to check
     // if the passed in secProps has peer authenticator or not
@@ -116,9 +125,9 @@ public class GMSAuthenticator implements Authenticator {
 
     String failMsg = null;
     try {
-      if (this.securityService.isIntegratedSecurity()) {
-        this.securityService.login(credentials);
-        this.securityService.authorizeClusterManage();
+      if (securityService.isIntegratedSecurity()) {
+        securityService.login(credentials);
+        securityService.authorizeClusterManage();
       } else {
         invokeAuthenticator(secProps, member, credentials);
       }
@@ -145,10 +154,9 @@ public class GMSAuthenticator implements Authenticator {
 
       LogWriter logWriter = this.services.getLogWriter();
       LogWriter securityLogWriter = this.services.getSecurityLogWriter();
-      auth.init(this.securityProps, logWriter, securityLogWriter); // this.securityProps contains
-                                                                   // security-ldap-basedn but
-                                                                   // security-ldap-baseDomainName
-                                                                   // is expected
+
+      // this.securityProps contains security-ldap-basedn but security-ldap-baseDomainName is expected
+      auth.init(this.securityProps, logWriter, securityLogWriter);
       return auth.authenticate(credentials, member);
 
     } catch (GemFireSecurityException gse) {
@@ -202,4 +210,35 @@ public class GMSAuthenticator implements Authenticator {
 
   @Override
   public void emergencyClose() {}
+
+  private final AtomicReference<SecurityService> securityServiceRef = new AtomicReference<>();
+
+  /**
+   * Terrible mess. It would be nice if we could create SecurityService BEFORE this class.
+   */
+  private SecurityService getSecurityService() {
+    SecurityService securityService = this.securityServiceRef.get();
+    if (securityService == null) {
+      synchronized (this.securityServiceRef) {
+        securityService = this.securityServiceRef.get();
+        if (securityService == null) {
+          InternalCache cache = GemFireCacheImpl.getInstance();
+          if (cache != null) {
+            securityService = cache.getSecurityService();
+          }
+        }
+        if (securityService == null) {
+          InternalDistributedSystem system = InternalDistributedSystem.getConnectedInstance();
+          if (system != null) {
+            securityService = SecurityServiceFactory.create(new CacheConfig(), system.getConfig());
+          } else {
+            securityService = SecurityServiceFactory.create(null, null);
+          }
+        }
+        this.securityServiceRef.set(securityService);
+      }
+    }
+    return securityService;
+  }
+
 }

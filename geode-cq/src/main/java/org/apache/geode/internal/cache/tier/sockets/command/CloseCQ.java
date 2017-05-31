@@ -31,7 +31,7 @@ import org.apache.geode.internal.cache.tier.sockets.Message;
 import org.apache.geode.internal.cache.tier.sockets.ServerConnection;
 import org.apache.geode.internal.i18n.LocalizedStrings;
 import org.apache.geode.internal.security.AuthorizeRequest;
-
+import org.apache.geode.internal.security.SecurityService;
 
 public class CloseCQ extends BaseCQCommand {
 
@@ -44,7 +44,7 @@ public class CloseCQ extends BaseCQCommand {
   private CloseCQ() {}
 
   @Override
-  public void cmdExecute(Message clientMessage, ServerConnection serverConnection, long start)
+  public void cmdExecute(final Message clientMessage, final ServerConnection serverConnection, final SecurityService securityService, long start)
       throws IOException {
     CachedRegionHelper crHelper = serverConnection.getCachedRegionHelper();
     ClientProxyMembershipID id = serverConnection.getProxyID();
@@ -69,11 +69,11 @@ public class CloseCQ extends BaseCQCommand {
       String err =
           LocalizedStrings.CloseCQ_THE_CQNAME_FOR_THE_CQ_CLOSE_REQUEST_IS_NULL.toLocalizedString();
       sendCqResponse(MessageType.CQDATAERROR_MSG_TYPE, err, clientMessage.getTransactionId(), null,
-          serverConnection);
+          serverConnection, securityService);
       return;
     }
 
-    this.securityService.authorizeDataManage();
+    securityService.authorizeDataManage();
 
     // Process CQ close request
     try {
@@ -107,20 +107,20 @@ public class CloseCQ extends BaseCQCommand {
         serverConnection.removeCq(cqName, cqQuery.isDurable());
     } catch (CqException cqe) {
       sendCqResponse(MessageType.CQ_EXCEPTION_TYPE, "", clientMessage.getTransactionId(), cqe,
-          serverConnection);
+          serverConnection, securityService);
       return;
     } catch (Exception e) {
       String err =
           LocalizedStrings.CloseCQ_EXCEPTION_WHILE_CLOSING_CQ_CQNAME_0.toLocalizedString(cqName);
       sendCqResponse(MessageType.CQ_EXCEPTION_TYPE, err, clientMessage.getTransactionId(), e,
-          serverConnection);
+          serverConnection, securityService);
       return;
     }
 
     // Send OK to client
     sendCqResponse(MessageType.REPLY,
         LocalizedStrings.CloseCQ_CQ_CLOSED_SUCCESSFULLY.toLocalizedString(),
-        clientMessage.getTransactionId(), null, serverConnection);
+        clientMessage.getTransactionId(), null, serverConnection, securityService);
     serverConnection.setAsTrue(RESPONDED);
 
     {

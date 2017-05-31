@@ -32,6 +32,7 @@ import org.apache.geode.internal.cache.tier.sockets.ClientProxyMembershipID;
 import org.apache.geode.internal.cache.tier.sockets.Message;
 import org.apache.geode.internal.cache.tier.sockets.ServerConnection;
 import org.apache.geode.internal.security.AuthorizeRequest;
+import org.apache.geode.internal.security.SecurityService;
 
 public class GetDurableCQs extends BaseCQCommand {
 
@@ -44,7 +45,7 @@ public class GetDurableCQs extends BaseCQCommand {
   private GetDurableCQs() {}
 
   @Override
-  public void cmdExecute(Message clientMessage, ServerConnection serverConnection, long start)
+  public void cmdExecute(final Message clientMessage, final ServerConnection serverConnection, final SecurityService securityService, long start)
       throws IOException, InterruptedException {
     AcceptorImpl acceptor = serverConnection.getAcceptor();
     CachedRegionHelper crHelper = serverConnection.getCachedRegionHelper();
@@ -66,7 +67,7 @@ public class GetDurableCQs extends BaseCQCommand {
     try {
       qService = (DefaultQueryService) crHelper.getCache().getLocalQueryService();
 
-      this.securityService.authorizeClusterRead();
+      securityService.authorizeClusterRead();
 
       // Authorization check
       AuthorizeRequest authzRequest = serverConnection.getAuthzRequest();
@@ -102,7 +103,7 @@ public class GetDurableCQs extends BaseCQCommand {
 
     } catch (CqException cqe) {
       sendCqResponse(MessageType.CQ_EXCEPTION_TYPE, "", clientMessage.getTransactionId(), cqe,
-          serverConnection);
+          serverConnection, securityService);
       return;
     } catch (Exception e) {
       writeChunkedException(clientMessage, e, serverConnection);

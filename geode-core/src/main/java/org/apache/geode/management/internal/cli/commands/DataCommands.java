@@ -33,8 +33,6 @@ import org.apache.geode.cache.execute.ResultCollector;
 import org.apache.geode.cache.partition.PartitionRebalanceInfo;
 import org.apache.geode.distributed.DistributedMember;
 import org.apache.geode.internal.cache.InternalCache;
-import org.apache.geode.internal.security.IntegratedSecurityService;
-import org.apache.geode.internal.security.SecurityService;
 import org.apache.geode.management.DistributedRegionMXBean;
 import org.apache.geode.management.ManagementService;
 import org.apache.geode.management.cli.CliMetaData;
@@ -49,6 +47,7 @@ import org.apache.geode.management.internal.cli.functions.DataCommandFunction;
 import org.apache.geode.management.internal.cli.functions.ExportDataFunction;
 import org.apache.geode.management.internal.cli.functions.ImportDataFunction;
 import org.apache.geode.management.internal.cli.functions.RebalanceFunction;
+import org.apache.geode.management.internal.cli.functions.SelectExecStep;
 import org.apache.geode.management.internal.cli.i18n.CliStrings;
 import org.apache.geode.management.internal.cli.multistep.CLIMultiStepHelper;
 import org.apache.geode.management.internal.cli.multistep.CLIStep;
@@ -92,8 +91,6 @@ public class DataCommands implements CommandMarker {
   private final ExportDataFunction exportDataFunction = new ExportDataFunction();
 
   private final ImportDataFunction importDataFunction = new ImportDataFunction();
-
-  private SecurityService securityService = IntegratedSecurityService.getSecurityService();
 
   private Gfsh getGfsh() {
     return Gfsh.getCurrentInstance();
@@ -750,7 +747,7 @@ public class DataCommands implements CommandMarker {
           optionContext = ConverterHint.MEMBERIDNAME, mandatory = true,
           help = CliStrings.EXPORT_DATA__MEMBER__HELP) String memberNameOrId) {
 
-    this.securityService.authorizeRegionRead(regionName);
+    getCache().getSecurityService().authorizeRegionRead(regionName);
     final DistributedMember targetMember = CliUtil.getDistributedMemberByNameOrId(memberNameOrId);
     Result result;
 
@@ -808,7 +805,7 @@ public class DataCommands implements CommandMarker {
       @CliOption(key = CliStrings.IMPORT_DATA__INVOKE_CALLBACKS, unspecifiedDefaultValue = "false",
           help = CliStrings.IMPORT_DATA__INVOKE_CALLBACKS__HELP) boolean invokeCallbacks) {
 
-    this.securityService.authorizeRegionWrite(regionName);
+    getCache().getSecurityService().authorizeRegionWrite(regionName);
 
     Result result;
 
@@ -869,8 +866,8 @@ public class DataCommands implements CommandMarker {
       @CliOption(key = {CliStrings.PUT__PUTIFABSENT}, help = CliStrings.PUT__PUTIFABSENT__HELP,
           unspecifiedDefaultValue = "false") boolean putIfAbsent) {
 
-    this.securityService.authorizeRegionWrite(regionPath);
     InternalCache cache = getCache();
+    cache.getSecurityService().authorizeRegionWrite(regionPath);
     DataCommandResult dataResult;
     if (StringUtils.isEmpty(regionPath)) {
       return makePresentationResult(DataCommandResult.createPutResult(key, null, null,
@@ -940,9 +937,9 @@ public class DataCommands implements CommandMarker {
       @CliOption(key = CliStrings.GET__LOAD, unspecifiedDefaultValue = "true",
           specifiedDefaultValue = "true",
           help = CliStrings.GET__LOAD__HELP) Boolean loadOnCacheMiss) {
-    this.securityService.authorizeRegionRead(regionPath, key);
 
     InternalCache cache = getCache();
+    cache.getSecurityService().authorizeRegionRead(regionPath, key);
     DataCommandResult dataResult;
 
     if (StringUtils.isEmpty(regionPath)) {
@@ -968,7 +965,7 @@ public class DataCommands implements CommandMarker {
         request.setRegionName(regionPath);
         request.setValueClass(valueClass);
         request.setLoadOnCacheMiss(loadOnCacheMiss);
-        Subject subject = this.securityService.getSubject();
+        Subject subject = cache.getSecurityService().getSubject();
         if (subject != null) {
           request.setPrincipal(subject.getPrincipal());
         }
@@ -979,7 +976,7 @@ public class DataCommands implements CommandMarker {
             false);
       }
     } else {
-      dataResult = getfn.get(null, key, keyClass, valueClass, regionPath, loadOnCacheMiss);
+      dataResult = getfn.get(null, key, keyClass, valueClass, regionPath, loadOnCacheMiss, cache.getSecurityService());
     }
     dataResult.setKeyClass(keyClass);
     if (valueClass != null) {
@@ -1005,7 +1002,7 @@ public class DataCommands implements CommandMarker {
           help = CliStrings.LOCATE_ENTRY__RECURSIVE__HELP,
           unspecifiedDefaultValue = "false") boolean recursive) {
 
-    this.securityService.authorizeRegionRead(regionPath, key);
+    getCache().getSecurityService().authorizeRegionRead(regionPath, key);
 
     DataCommandResult dataResult;
 
@@ -1068,9 +1065,9 @@ public class DataCommands implements CommandMarker {
     }
 
     if (removeAllKeys) {
-      this.securityService.authorizeRegionWrite(regionPath);
+      cache.getSecurityService().authorizeRegionWrite(regionPath);
     } else {
-      this.securityService.authorizeRegionWrite(regionPath, key);
+      cache.getSecurityService().authorizeRegionWrite(regionPath, key);
     }
 
     @SuppressWarnings("rawtypes")
@@ -1116,7 +1113,7 @@ public class DataCommands implements CommandMarker {
     }
 
     Object[] arguments = new Object[] {query, stepName, interactive};
-    CLIStep exec = new DataCommandFunction.SelectExecStep(arguments);
+    CLIStep exec = new SelectExecStep(arguments);
     CLIStep display = new DataCommandFunction.SelectDisplayStep(arguments);
     CLIStep move = new DataCommandFunction.SelectMoveStep(arguments);
     CLIStep quit = new DataCommandFunction.SelectQuitStep(arguments);

@@ -46,7 +46,7 @@ public class IntegratedSecurityServiceTest {
   @Before
   public void before() {
     properties = new Properties();
-    securityService = SecurityService.getSecurityService();
+    securityService = SecurityServiceFactory.create(null, null);
     securityService.initSecurity(properties);
   }
 

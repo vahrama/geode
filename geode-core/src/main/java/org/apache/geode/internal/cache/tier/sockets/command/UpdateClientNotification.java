@@ -20,6 +20,7 @@ package org.apache.geode.internal.cache.tier.sockets.command;
 import org.apache.geode.internal.cache.tier.Command;
 import org.apache.geode.internal.cache.tier.sockets.*;
 import org.apache.geode.distributed.internal.DistributionStats;
+import org.apache.geode.internal.security.SecurityService;
 
 import java.io.IOException;
 
@@ -35,7 +36,7 @@ public class UpdateClientNotification extends BaseCommand {
   private UpdateClientNotification() {}
 
   @Override
-  public void cmdExecute(Message clientMessage, ServerConnection serverConnection, long start)
+  public void cmdExecute(final Message clientMessage, final ServerConnection serverConnection, final SecurityService securityService, long start)
       throws IOException {
     CacheServerStats stats = serverConnection.getCacheServerStats();
     {

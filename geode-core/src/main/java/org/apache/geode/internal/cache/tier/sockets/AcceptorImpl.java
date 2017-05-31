@@ -272,7 +272,7 @@ public class AcceptorImpl extends Acceptor implements Runnable {
   private List<GatewayTransportFilter> gatewayTransportFilters;
   private final SocketCreator socketCreator;
 
-  private SecurityService securityService = IntegratedSecurityService.getSecurityService();
+  private final SecurityService securityService;
 
   /**
    * Initializes this acceptor thread to listen for connections on the given port.
@@ -297,6 +297,7 @@ public class AcceptorImpl extends Acceptor implements Runnable {
       int maxConnections, int maxThreads, int maximumMessageCount, int messageTimeToLive,
       ConnectionListener listener, List overflowAttributesList, boolean isGatewayReceiver,
       List<GatewayTransportFilter> transportFilter, boolean tcpNoDelay) throws IOException {
+    this.securityService = internalCache.getSecurityService();
     this.bindHostName = calcBindHostName(internalCache, bindHostName);
     this.connectionListener = listener == null ? new ConnectionListenerAdapter() : listener;
     this.notifyBySubscription = notifyBySubscription;
@@ -1470,7 +1471,7 @@ public class AcceptorImpl extends Acceptor implements Runnable {
       }
       ServerConnection serverConn = new ServerConnection(s, this.cache, this.crHelper, this.stats,
           AcceptorImpl.handShakeTimeout, this.socketBufferSize, communicationModeStr,
-          communicationMode, this);
+          communicationMode, this, this.securityService);
       synchronized (this.allSCsLock) {
         this.allSCs.add(serverConn);
         ServerConnection snap[] = this.allSCList; // avoid volatile read

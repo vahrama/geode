@@ -94,9 +94,6 @@ public class DataCommandFunction extends FunctionAdapter implements InternalEnti
   protected static final String SELECT_STEP_EXEC = "SELECT_EXEC";
   private static final int NESTED_JSON_LENGTH = 20;
 
-  // this needs to be static so that it won't get serialized
-  private static SecurityService securityService = SecurityService.getSecurityService();
-
   @Override
   public String getId() {
     return DataCommandFunction.class.getName();
@@ -136,7 +133,7 @@ public class DataCommandFunction extends FunctionAdapter implements InternalEnti
       }
       DataCommandResult result = null;
       if (request.isGet()) {
-        result = get(request);
+        result = get(request, cache.getSecurityService());
       } else if (request.isLocateEntry()) {
         result = locateEntry(request);
       } else if (request.isPut()) {
@@ -169,13 +166,13 @@ public class DataCommandFunction extends FunctionAdapter implements InternalEnti
     return remove(key, keyClass, regionName, removeAllKeys);
   }
 
-  public DataCommandResult get(DataCommandRequest request) {
+  public DataCommandResult get(DataCommandRequest request, SecurityService securityService) {
     String key = request.getKey();
     String keyClass = request.getKeyClass();
     String valueClass = request.getValueClass();
     String regionName = request.getRegionName();
     Boolean loadOnCacheMiss = request.isLoadOnCacheMiss();
-    return get(request.getPrincipal(), key, keyClass, valueClass, regionName, loadOnCacheMiss);
+    return get(request.getPrincipal(), key, keyClass, valueClass, regionName, loadOnCacheMiss, securityService);
   }
 
   public DataCommandResult locateEntry(DataCommandRequest request) {
@@ -296,7 +293,7 @@ public class DataCommandFunction extends FunctionAdapter implements InternalEnti
       List<SelectResultRow> list, AtomicInteger nestedObjectCount) throws GfJsonException {
     for (Object object : selectResults) {
       // Post processing
-      object = securityService.postProcess(principal, null, null, object, false);
+      object = getCache().getSecurityService().postProcess(principal, null, null, object, false);
 
       if (object instanceof Struct) {
         StructImpl impl = (StructImpl) object;
@@ -434,7 +431,7 @@ public class DataCommandFunction extends FunctionAdapter implements InternalEnti
 
   @SuppressWarnings({"rawtypes"})
   public DataCommandResult get(Object principal, String key, String keyClass, String valueClass,
-      String regionName, Boolean loadOnCacheMiss) {
+      String regionName, Boolean loadOnCacheMiss, SecurityService securityService) {
 
     InternalCache cache = getCache();
 
@@ -836,7 +833,7 @@ public class DataCommandFunction extends FunctionAdapter implements InternalEnti
     return list;
   }
 
-  private static DataCommandResult cachedResult = null;
+  static DataCommandResult cachedResult = null;
 
   public static class SelectDisplayStep extends CLIMultiStepHelper.LocalStep {
 
@@ -915,107 +912,6 @@ public class DataCommandFunction extends FunctionAdapter implements InternalEnti
     }
   }
 
-  public static class SelectExecStep extends CLIMultiStepHelper.RemoteStep {
-
-    private static final long serialVersionUID = 1L;
-
-    private static SecurityService securityService = SecurityService.getSecurityService();
-
-    public SelectExecStep(Object[] arguments) {
-      super(SELECT_STEP_EXEC, arguments);
-    }
-
-    @Override
-    public Result exec() {
-      String remainingQuery = (String) commandArguments[0];
-      boolean interactive = (Boolean) commandArguments[2];
-      DataCommandResult result = _select(remainingQuery);
-      int endCount = 0;
-      cachedResult = result;
-      if (interactive) {
-        endCount = getPageSize();
-      } else {
-        if (result.getSelectResult() != null) {
-          endCount = result.getSelectResult().size();
-        }
-      }
-      if (interactive) {
-        return result.pageResult(0, endCount, SELECT_STEP_DISPLAY);
-      } else {
-        return CLIMultiStepHelper.createBannerResult(new String[] {}, new Object[] {},
-            SELECT_STEP_END);
-      }
-    }
-
-    public DataCommandResult _select(String query) {
-      InternalCache cache = (InternalCache) CacheFactory.getAnyInstance();
-      DataCommandResult dataResult;
-
-      if (StringUtils.isEmpty(query)) {
-        dataResult = DataCommandResult.createSelectInfoResult(null, null, -1, null,
-            CliStrings.QUERY__MSG__QUERY_EMPTY, false);
-        return dataResult;
-      }
-
-      Object array[] = DataCommands.replaceGfshEnvVar(query, CommandExecutionContext.getShellEnv());
-      query = (String) array[1];
-      query = addLimit(query);
-
-      @SuppressWarnings("deprecation")
-      QCompiler compiler = new QCompiler();
-      Set<String> regionsInQuery;
-      try {
-        CompiledValue compiledQuery = compiler.compileQuery(query);
-        Set<String> regions = new HashSet<>();
-        compiledQuery.getRegionsInQuery(regions, null);
-
-        // authorize data read on these regions
-        for (String region : regions) {
-          securityService.authorizeRegionRead(region);
-        }
-
-        regionsInQuery = Collections.unmodifiableSet(regions);
-        if (regionsInQuery.size() > 0) {
-          Set<DistributedMember> members =
-              DataCommands.getQueryRegionsAssociatedMembers(regionsInQuery, cache, false);
-          if (members != null && members.size() > 0) {
-            DataCommandFunction function = new DataCommandFunction();
-            DataCommandRequest request = new DataCommandRequest();
-            request.setCommand(CliStrings.QUERY);
-            request.setQuery(query);
-            Subject subject = securityService.getSubject();
-            if (subject != null) {
-              request.setPrincipal(subject.getPrincipal());
-            }
-            dataResult = DataCommands.callFunctionForRegion(request, function, members);
-            dataResult.setInputQuery(query);
-            return dataResult;
-          } else {
-            return DataCommandResult.createSelectInfoResult(null, null, -1, null, CliStrings.format(
-                CliStrings.QUERY__MSG__REGIONS_NOT_FOUND, regionsInQuery.toString()), false);
-          }
-        } else {
-          return DataCommandResult.createSelectInfoResult(null, null, -1, null,
-              CliStrings.format(CliStrings.QUERY__MSG__INVALID_QUERY,
-                  "Region mentioned in query probably missing /"),
-              false);
-        }
-      } catch (QueryInvalidException qe) {
-        logger.error("{} Failed Error {}", query, qe.getMessage(), qe);
-        return DataCommandResult.createSelectInfoResult(null, null, -1, null,
-            CliStrings.format(CliStrings.QUERY__MSG__INVALID_QUERY, qe.getMessage()), false);
-      }
-    }
-
-    private String addLimit(String query) {
-      if (StringUtils.containsIgnoreCase(query, " limit")
-          || StringUtils.containsIgnoreCase(query, " count(")) {
-        return query;
-      }
-      return query + " limit " + getFetchSize();
-    }
-  }
-
   public static class SelectQuitStep extends CLIMultiStepHelper.RemoteStep {
 
     public SelectQuitStep(Object[] arguments) {
@@ -1063,7 +959,7 @@ public class DataCommandFunction extends FunctionAdapter implements InternalEnti
     return pageSize;
   }
 
-  private static int getFetchSize() {
+  static int getFetchSize() {
     return CommandExecutionContext.getShellFetchSize();
   }
 

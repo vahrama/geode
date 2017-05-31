@@ -32,6 +32,7 @@ import org.apache.geode.internal.cache.tier.sockets.Message;
 import org.apache.geode.internal.cache.tier.sockets.ServerConnection;
 import org.apache.geode.internal.i18n.LocalizedStrings;
 import org.apache.geode.internal.security.AuthorizeRequest;
+import org.apache.geode.internal.security.SecurityService;
 
 public class StopCQ extends BaseCQCommand {
 
@@ -44,7 +45,7 @@ public class StopCQ extends BaseCQCommand {
   private StopCQ() {}
 
   @Override
-  public void cmdExecute(Message clientMessage, ServerConnection serverConnection, long start)
+  public void cmdExecute(final Message clientMessage, final ServerConnection serverConnection, final SecurityService securityService, long start)
       throws IOException {
     CachedRegionHelper crHelper = serverConnection.getCachedRegionHelper();
     ClientProxyMembershipID id = serverConnection.getProxyID();
@@ -69,7 +70,7 @@ public class StopCQ extends BaseCQCommand {
       String err =
           LocalizedStrings.StopCQ_THE_CQNAME_FOR_THE_CQ_STOP_REQUEST_IS_NULL.toLocalizedString();
       sendCqResponse(MessageType.CQDATAERROR_MSG_TYPE, err, clientMessage.getTransactionId(), null,
-          serverConnection);
+          serverConnection, securityService);
       return;
     }
 
@@ -86,7 +87,7 @@ public class StopCQ extends BaseCQCommand {
       }
       InternalCqQuery cqQuery = cqService.getCq(serverCqName);
 
-      this.securityService.authorizeDataManage();
+      securityService.authorizeDataManage();
 
       AuthorizeRequest authzRequest = serverConnection.getAuthzRequest();
       if (authzRequest != null) {
@@ -105,20 +106,20 @@ public class StopCQ extends BaseCQCommand {
         serverConnection.removeCq(cqName, cqQuery.isDurable());
     } catch (CqException cqe) {
       sendCqResponse(MessageType.CQ_EXCEPTION_TYPE, "", clientMessage.getTransactionId(), cqe,
-          serverConnection);
+          serverConnection, securityService);
       return;
     } catch (Exception e) {
       String err =
           LocalizedStrings.StopCQ_EXCEPTION_WHILE_STOPPING_CQ_NAMED_0.toLocalizedString(cqName);
       sendCqResponse(MessageType.CQ_EXCEPTION_TYPE, err, clientMessage.getTransactionId(), e,
-          serverConnection);
+          serverConnection, securityService);
       return;
     }
 
     // Send OK to client
     sendCqResponse(MessageType.REPLY,
         LocalizedStrings.StopCQ_CQ_STOPPED_SUCCESSFULLY.toLocalizedString(),
-        clientMessage.getTransactionId(), null, serverConnection);
+        clientMessage.getTransactionId(), null, serverConnection, securityService);
 
     serverConnection.setAsTrue(RESPONDED);
 

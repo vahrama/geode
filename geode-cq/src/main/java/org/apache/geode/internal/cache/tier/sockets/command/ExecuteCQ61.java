@@ -44,6 +44,7 @@ import org.apache.geode.internal.cache.vmotion.VMotionObserverHolder;
 import org.apache.geode.internal.i18n.LocalizedStrings;
 import org.apache.geode.internal.logging.LogService;
 import org.apache.geode.internal.security.AuthorizeRequest;
+import org.apache.geode.internal.security.SecurityService;
 
 /**
  * @since GemFire 6.1
@@ -60,7 +61,7 @@ public class ExecuteCQ61 extends BaseCQCommand {
   private ExecuteCQ61() {}
 
   @Override
-  public void cmdExecute(Message clientMessage, ServerConnection serverConnection, long start)
+  public void cmdExecute(final Message clientMessage, final ServerConnection serverConnection, final SecurityService securityService, long start)
       throws IOException, InterruptedException {
     AcceptorImpl acceptor = serverConnection.getAcceptor();
     CachedRegionHelper crHelper = serverConnection.getCachedRegionHelper();
@@ -97,7 +98,7 @@ public class ExecuteCQ61 extends BaseCQCommand {
             LocalizedStrings.ExecuteCQ_SERVER_NOTIFYBYSUBSCRIPTION_MODE_IS_SET_TO_FALSE_CQ_EXECUTION_IS_NOT_SUPPORTED_IN_THIS_MODE
                 .toLocalizedString();
         sendCqResponse(MessageType.CQDATAERROR_MSG_TYPE, err, clientMessage.getTransactionId(),
-            null, serverConnection);
+            null, serverConnection, securityService);
         return;
       }
     }
@@ -146,7 +147,7 @@ public class ExecuteCQ61 extends BaseCQCommand {
           isDurable, true, regionDataPolicyPartBytes[0], null);
     } catch (CqException cqe) {
       sendCqResponse(MessageType.CQ_EXCEPTION_TYPE, "", clientMessage.getTransactionId(), cqe,
-          serverConnection);
+          serverConnection, securityService);
       serverConnection.removeCq(cqName, isDurable);
       return;
     } catch (Exception e) {
@@ -175,7 +176,7 @@ public class ExecuteCQ61 extends BaseCQCommand {
         }
         ((DefaultQuery) query).setIsCqQuery(true);
         successQuery = processQuery(clientMessage, query, cqQueryString, cqRegionNames, start,
-            cqQuery, executeCQContext, serverConnection, sendResults);
+            cqQuery, executeCQContext, serverConnection, sendResults, securityService);
 
 
         // Update the CQ statistics.
@@ -204,13 +205,12 @@ public class ExecuteCQ61 extends BaseCQCommand {
       // Send OK to client
       sendCqResponse(MessageType.REPLY,
           LocalizedStrings.ExecuteCQ_CQ_CREATED_SUCCESSFULLY.toLocalizedString(),
-          clientMessage.getTransactionId(), null, serverConnection);
+          clientMessage.getTransactionId(), null, serverConnection, securityService);
 
       long start2 = DistributionStats.getStatTime();
       stats.incProcessCreateCqTime(start2 - oldstart);
     }
     serverConnection.setAsTrue(RESPONDED);
-
   }
 
 }

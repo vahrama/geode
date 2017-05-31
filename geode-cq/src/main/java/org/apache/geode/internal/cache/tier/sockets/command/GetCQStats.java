@@ -24,6 +24,7 @@ import org.apache.geode.internal.cache.tier.MessageType;
 import org.apache.geode.internal.cache.tier.sockets.CacheServerStats;
 import org.apache.geode.internal.cache.tier.sockets.Message;
 import org.apache.geode.internal.cache.tier.sockets.ServerConnection;
+import org.apache.geode.internal.security.SecurityService;
 
 public class GetCQStats extends BaseCQCommand {
 
@@ -36,7 +37,7 @@ public class GetCQStats extends BaseCQCommand {
   private GetCQStats() {}
 
   @Override
-  public void cmdExecute(Message clientMessage, ServerConnection serverConnection, long start)
+  public void cmdExecute(final Message clientMessage, final ServerConnection serverConnection, final SecurityService securityService, long start)
       throws IOException {
     CachedRegionHelper crHelper = serverConnection.getCachedRegionHelper();
 
@@ -63,11 +64,11 @@ public class GetCQStats extends BaseCQCommand {
     if (cqName == null) {
       String err = "The cqName for the cq stats request is null";
       sendCqResponse(MessageType.CQDATAERROR_MSG_TYPE, err, clientMessage.getTransactionId(), null,
-          serverConnection);
+          serverConnection, securityService);
       return;
     }
 
-    this.securityService.authorizeClusterRead();
+    securityService.authorizeClusterRead();
     // Process the cq request
     try {
       // make sure the cqservice has been created
@@ -77,12 +78,12 @@ public class GetCQStats extends BaseCQCommand {
     } catch (Exception e) {
       String err = "Exception while Getting the CQ Statistics. ";
       sendCqResponse(MessageType.CQ_EXCEPTION_TYPE, err, clientMessage.getTransactionId(), e,
-          serverConnection);
+          serverConnection, securityService);
       return;
     }
     // Send OK to client
     sendCqResponse(MessageType.REPLY, "cq stats sent successfully.",
-        clientMessage.getTransactionId(), null, serverConnection);
+        clientMessage.getTransactionId(), null, serverConnection, securityService);
     serverConnection.setAsTrue(RESPONDED);
 
     {

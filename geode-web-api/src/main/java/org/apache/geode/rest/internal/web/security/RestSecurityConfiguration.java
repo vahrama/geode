@@ -35,8 +35,6 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 @ComponentScan("org.apache.geode.rest.internal.web")
 public class RestSecurityConfiguration extends WebSecurityConfigurerAdapter {
 
-  private SecurityService securityService = IntegratedSecurityService.getSecurityService();
-
   @Autowired
   private GeodeAuthenticationProvider authProvider;
 
@@ -58,7 +56,7 @@ public class RestSecurityConfiguration extends WebSecurityConfigurerAdapter {
             "/webjars/springfox-swagger-ui/**", "/swagger-resources/**")
         .permitAll().anyRequest().authenticated().and().csrf().disable();
 
-    if (securityService.isIntegratedSecurity()) {
+    if (this.authProvider.getSecurityService().isIntegratedSecurity()) {
       http.httpBasic();
     } else {
       http.authorizeRequests().anyRequest().permitAll();

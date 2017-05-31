@@ -11,12 +11,10 @@
  * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
- *
  */
-
 package org.apache.geode.tools.pulse.tests.rules;
 
-
+import org.apache.geode.internal.security.DisabledSecurityService;
 import org.apache.geode.tools.pulse.internal.data.PulseConstants;
 import org.awaitility.Awaitility;
 import org.apache.geode.internal.AvailablePort;
@@ -43,7 +41,7 @@ public class ServerRule extends ExternalResource {
     String jmxPropertiesFile = classLoader.getResource("test.properties").getPath();
 
     int jmxPort = AvailablePort.getRandomAvailablePort(AvailablePort.SOCKET);
-    server = Server.createServer(jmxPort, jmxPropertiesFile, jsonAuthFile);
+    server = Server.createServer(jmxPort, jmxPropertiesFile, jsonAuthFile, new DisabledSecurityService());
     System.setProperty(PulseConstants.SYSTEM_PROPERTY_PULSE_HOST, LOCALHOST);
     System.setProperty(PulseConstants.SYSTEM_PROPERTY_PULSE_PORT, Integer.toString(jmxPort));
 

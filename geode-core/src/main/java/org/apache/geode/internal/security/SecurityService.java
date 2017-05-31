@@ -30,6 +30,12 @@ import java.util.concurrent.Callable;
 
 public interface SecurityService {
 
+  void initSecurity(Properties securityProps); // TODO:KIRK
+
+  void setSecurityManager(SecurityManager securityManager); // TODO:KIRK
+
+  void setPostProcessor(PostProcessor postProcessor); // TODO:KIRK
+
   ThreadState bindSubject(Subject subject);
 
   Subject getSubject();
@@ -74,8 +80,6 @@ public interface SecurityService {
 
   void authorize(ResourcePermission context);
 
-  void initSecurity(Properties securityProps);
-
   void close();
 
   boolean needPostProcess();
@@ -93,21 +97,17 @@ public interface SecurityService {
 
   SecurityManager getSecurityManager();
 
-  void setSecurityManager(SecurityManager securityManager);
-
   PostProcessor getPostProcessor();
-
-  void setPostProcessor(PostProcessor postProcessor);
 
   /**
    * this method would never return null, it either throws an exception or returns an object
    */
-  public static <T> T getObjectOfTypeFromClassName(String className, Class<T> expectedClazz) {
-    Class actualClass = null;
+  static <T> T getObjectOfTypeFromClassName(String className, Class<T> expectedClazz) {
+    Class actualClass;
     try {
       actualClass = ClassLoadUtil.classFromName(className);
-    } catch (Exception ex) {
-      throw new GemFireSecurityException("Instance could not be obtained, " + ex.toString(), ex);
+    } catch (Exception e) {
+      throw new GemFireSecurityException("Instance could not be obtained, " + e, e);
     }
 
     if (!expectedClazz.isAssignableFrom(actualClass)) {
@@ -115,22 +115,22 @@ public interface SecurityService {
           "Instance could not be obtained. Expecting a " + expectedClazz.getName() + " class.");
     }
 
-    T actualObject = null;
     try {
-      actualObject = (T) actualClass.newInstance();
+      return (T) actualClass.newInstance();
     } catch (Exception e) {
       throw new GemFireSecurityException(
           "Instance could not be obtained. Error instantiating " + actualClass.getName(), e);
     }
-    return actualObject;
   }
 
   /**
    * this method would never return null, it either throws an exception or returns an object
+   *
+   * TODO: expectedClazz is unused
    */
-  public static <T> T getObjectOfTypeFromFactoryMethod(String factoryMethodName,
+  static <T> T getObjectOfTypeFromFactoryMethod(String factoryMethodName,
       Class<T> expectedClazz) {
-    T actualObject = null;
+    T actualObject;
     try {
       Method factoryMethod = ClassLoadUtil.methodFromName(factoryMethodName);
       actualObject = (T) factoryMethod.invoke(null, (Object[]) null);
@@ -153,17 +153,17 @@ public interface SecurityService {
    * @return an object of type expectedClazz. This method would never return null. It either returns
    *         an non-null object or throws exception.
    */
-  public static <T> T getObjectOfType(String classOrMethod, Class<T> expectedClazz) {
-    T object = null;
+  static <T> T getObjectOfType(String classOrMethod, Class<T> expectedClazz) {
+    T object;
     try {
       object = getObjectOfTypeFromClassName(classOrMethod, expectedClazz);
-    } catch (Exception e) {
+    } catch (Exception ignore) {
       object = getObjectOfTypeFromFactoryMethod(classOrMethod, expectedClazz);
     }
     return object;
   }
 
-  public static Properties getCredentials(Properties securityProps) {
+  static Properties getCredentials(Properties securityProps) {
     Properties credentials = null;
     if (securityProps.containsKey(ResourceConstants.USER_NAME)
         && securityProps.containsKey(ResourceConstants.PASSWORD)) {
@@ -177,6 +177,7 @@ public interface SecurityService {
   }
 
   static SecurityService getSecurityService() {
+    // TODO:KIRK
     return IntegratedSecurityService.getSecurityService();
   }
 

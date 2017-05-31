@@ -144,6 +144,8 @@ import org.apache.geode.internal.logging.InternalLogWriter;
 import org.apache.geode.internal.logging.LocalLogWriter;
 import org.apache.geode.internal.logging.LogWriterFactory;
 import org.apache.geode.internal.offheap.MemoryAllocator;
+import org.apache.geode.internal.security.DisabledSecurityService;
+import org.apache.geode.internal.security.SecurityService;
 import org.apache.geode.management.internal.JmxManagerAdvisor;
 import org.apache.geode.management.internal.RestAgent;
 import org.apache.geode.pdx.PdxInstance;
@@ -1037,6 +1039,11 @@ public class CacheCreation implements InternalCache {
   @Override
   public void waitForRegisterInterestsInProgress() {
     throw new UnsupportedOperationException(LocalizedStrings.SHOULDNT_INVOKE.toLocalizedString());
+  }
+
+  @Override
+  public SecurityService getSecurityService() {
+    return new DisabledSecurityService();
   }
 
   void addDeclarableProperties(final Declarable declarable, final Properties properties) {

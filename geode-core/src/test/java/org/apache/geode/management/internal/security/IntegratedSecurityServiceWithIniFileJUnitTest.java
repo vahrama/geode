@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.apache.geode.internal.security.IntegratedSecurityService;
 import org.apache.geode.internal.security.SecurityService;
+import org.apache.geode.internal.security.SecurityServiceFactory;
 import org.apache.geode.security.GemFireSecurityException;
 import org.apache.geode.security.ResourcePermission;
 import org.apache.geode.test.junit.categories.IntegrationTest;
@@ -38,7 +39,7 @@ public class IntegratedSecurityServiceWithIniFileJUnitTest {
 
   protected static Properties props = new Properties();
 
-  private SecurityService securityService = SecurityService.getSecurityService();
+  private SecurityService securityService;
 
   @BeforeClass
   public static void beforeClass() throws Exception {
@@ -47,7 +48,8 @@ public class IntegratedSecurityServiceWithIniFileJUnitTest {
 
   @Before
   public void before() {
-    securityService.initSecurity(props);
+    this.securityService = SecurityServiceFactory.create(null, null);
+    this.securityService.initSecurity(props);
   }
 
   @Test
