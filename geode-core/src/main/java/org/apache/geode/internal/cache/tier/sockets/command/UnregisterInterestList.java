@@ -47,7 +47,8 @@ public class UnregisterInterestList extends BaseCommand {
   private UnregisterInterestList() {}
 
   @Override
-  public void cmdExecute(final Message clientMessage, final ServerConnection serverConnection, final SecurityService securityService, long start)
+  public void cmdExecute(final Message clientMessage, final ServerConnection serverConnection,
+      final SecurityService securityService, long start)
       throws IOException, ClassNotFoundException {
     Part regionNamePart = null, keyPart = null, numberOfKeysPart = null;
     String regionName = null;

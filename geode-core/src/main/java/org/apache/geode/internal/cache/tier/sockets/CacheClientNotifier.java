@@ -330,14 +330,16 @@ public class CacheClientNotifier {
       proxy = registerClient(socket, proxyID, proxy, isPrimary, clientConflation, clientVersion,
           acceptorId, notifyBySubscription);
 
-      Properties credentials = HandShake.readCredentials(dis, dos, system, this.cache.getSecurityService());
+      Properties credentials =
+          HandShake.readCredentials(dis, dos, system, this.cache.getSecurityService());
       if (credentials != null && proxy != null) {
         if (securityLogWriter.fineEnabled()) {
           securityLogWriter
               .fine("CacheClientNotifier: verifying credentials for proxyID: " + proxyID);
         }
-        Object subject = HandShake.verifyCredentials(authenticator, credentials,
-            system.getSecurityProperties(), this.logWriter, this.securityLogWriter, member, this.cache.getSecurityService());
+        Object subject =
+            HandShake.verifyCredentials(authenticator, credentials, system.getSecurityProperties(),
+                this.logWriter, this.securityLogWriter, member, this.cache.getSecurityService());
         if (subject instanceof Principal) {
           Principal principal = (Principal) subject;
           if (securityLogWriter.fineEnabled()) {
@@ -957,7 +959,7 @@ public class CacheClientNotifier {
       Collection<ClientProxyMembershipID> filterClients) {
 
     this.cache.getCancelCriterion().checkCancelInProgress(null); // bug #43942 - client notified
-                                                                  // but no p2p distribution
+                                                                 // but no p2p distribution
 
     List<CacheClientProxy> deadProxies = null;
     for (ClientProxyMembershipID clientId : filterClients) {
@@ -2091,8 +2093,8 @@ public class CacheClientNotifier {
 
   /**
    * The GemFire <code>InternalCache</code>. Note that since this is a singleton class you should
-   * not use a direct reference to cache in CacheClientNotifier code. Instead, you should always
-   * use <code>getCache()</code>
+   * not use a direct reference to cache in CacheClientNotifier code. Instead, you should always use
+   * <code>getCache()</code>
    */
   private InternalCache cache;
 

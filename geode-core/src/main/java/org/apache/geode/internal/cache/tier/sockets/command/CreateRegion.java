@@ -39,8 +39,8 @@ public class CreateRegion extends BaseCommand {
   }
 
   @Override
-  public void cmdExecute(final Message clientMessage, final ServerConnection serverConnection, final SecurityService securityService, long start)
-      throws IOException {
+  public void cmdExecute(final Message clientMessage, final ServerConnection serverConnection,
+      final SecurityService securityService, long start) throws IOException {
     Part regionNamePart = null;
     String regionName = null;
     serverConnection.setAsTrue(REQUIRES_RESPONSE);

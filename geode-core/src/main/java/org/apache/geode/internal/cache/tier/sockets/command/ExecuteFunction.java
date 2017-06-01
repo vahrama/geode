@@ -65,8 +65,8 @@ public class ExecuteFunction extends BaseCommand {
   }
 
   @Override
-  public void cmdExecute(final Message clientMessage, final ServerConnection serverConnection, final SecurityService securityService, long start)
-      throws IOException {
+  public void cmdExecute(final Message clientMessage, final ServerConnection serverConnection,
+      final SecurityService securityService, long start) throws IOException {
     Object function = null;
     Object args = null;
     MemberMappedArgument memberMappedArg = null;
@@ -153,8 +153,8 @@ public class ExecuteFunction extends BaseCommand {
         long startExecution = stats.startTime();
         stats.startFunctionExecution(functionObject.hasResult());
         if (logger.isDebugEnabled()) {
-          logger.debug("Executing Function on Server: " + serverConnection.toString() + "with context :"
-              + context.toString());
+          logger.debug("Executing Function on Server: " + serverConnection.toString()
+              + "with context :" + context.toString());
         }
         InternalCache cache = serverConnection.getCache();
         HeapMemoryMonitor hmm =
@@ -212,18 +212,19 @@ public class ExecuteFunction extends BaseCommand {
     }
   }
 
-  private void sendException(byte hasResult, Message msg, String message, ServerConnection serverConnection,
-      Throwable e) throws IOException {
+  private void sendException(byte hasResult, Message msg, String message,
+      ServerConnection serverConnection, Throwable e) throws IOException {
     if (hasResult == 1) {
       writeFunctionResponseException(msg, MessageType.EXCEPTION, serverConnection, e);
       serverConnection.setAsTrue(RESPONDED);
     }
   }
 
-  private void sendError(byte hasResult, Message msg, String message, ServerConnection serverConnection)
-      throws IOException {
+  private void sendError(byte hasResult, Message msg, String message,
+      ServerConnection serverConnection) throws IOException {
     if (hasResult == 1) {
-      writeFunctionResponseError(msg, MessageType.EXECUTE_FUNCTION_ERROR, message, serverConnection);
+      writeFunctionResponseError(msg, MessageType.EXECUTE_FUNCTION_ERROR, message,
+          serverConnection);
       serverConnection.setAsTrue(RESPONDED);
     }
   }

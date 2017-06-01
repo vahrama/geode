@@ -69,7 +69,9 @@ public class TXSynchronizationCommand extends BaseCommand {
    * long)
    */
   @Override
-  public void cmdExecute(final Message clientMessage, final ServerConnection serverConnection, final SecurityService securityService, long start) throws IOException, ClassNotFoundException, InterruptedException {
+  public void cmdExecute(final Message clientMessage, final ServerConnection serverConnection,
+      final SecurityService securityService, long start)
+      throws IOException, ClassNotFoundException, InterruptedException {
 
     serverConnection.setAsTrue(REQUIRES_RESPONSE);
 

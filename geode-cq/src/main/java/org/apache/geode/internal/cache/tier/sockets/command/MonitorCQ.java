@@ -37,8 +37,8 @@ public class MonitorCQ extends BaseCQCommand {
   private MonitorCQ() {}
 
   @Override
-  public void cmdExecute(final Message clientMessage, final ServerConnection serverConnection, final SecurityService securityService, long start)
-      throws IOException {
+  public void cmdExecute(final Message clientMessage, final ServerConnection serverConnection,
+      final SecurityService securityService, long start) throws IOException {
     CachedRegionHelper crHelper = serverConnection.getCachedRegionHelper();
     serverConnection.setAsTrue(REQUIRES_RESPONSE);
     serverConnection.setAsTrue(REQUIRES_CHUNKED_RESPONSE);

@@ -19,7 +19,8 @@ import org.apache.geode.internal.cache.tier.sockets.ServerConnection;
 import org.apache.geode.internal.security.SecurityService;
 
 public interface Command {
-  void execute(Message clientMessage, ServerConnection serverConnection, SecurityService securityService);
+  void execute(Message clientMessage, ServerConnection serverConnection,
+      SecurityService securityService);
 
   int RESPONDED = 1;
 

@@ -59,7 +59,7 @@ public class Server {
   private String propFile = null;
 
   public Server(int jmxPort, String properties, String jsonAuthFile,
-                final SecurityService securityService) throws Exception {
+      final SecurityService securityService) throws Exception {
     this.propFile = properties;
     mbs = ManagementFactory.getPlatformMBeanServer();
     url = new JMXServiceURL(formJMXServiceURLString(DEFAULT_HOST, jmxPort));
@@ -226,7 +226,7 @@ public class Server {
   }
 
   public static Server createServer(int jmxPort, String properties, String jsonAuthFile,
-                                    final SecurityService securityService) {
+      final SecurityService securityService) {
     Server s = null;
     try {
       s = new Server(jmxPort, properties, jsonAuthFile, securityService);

@@ -50,8 +50,8 @@ public class Request extends BaseCommand {
   Request() {}
 
   @Override
-  public void cmdExecute(final Message clientMessage, final ServerConnection serverConnection, final SecurityService securityService, long start)
-      throws IOException {
+  public void cmdExecute(final Message clientMessage, final ServerConnection serverConnection,
+      final SecurityService securityService, long start) throws IOException {
     Part regionNamePart = null, keyPart = null, valuePart = null;
     String regionName = null;
     Object callbackArg = null, key = null;

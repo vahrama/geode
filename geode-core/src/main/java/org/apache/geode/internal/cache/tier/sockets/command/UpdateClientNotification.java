@@ -36,8 +36,8 @@ public class UpdateClientNotification extends BaseCommand {
   private UpdateClientNotification() {}
 
   @Override
-  public void cmdExecute(final Message clientMessage, final ServerConnection serverConnection, final SecurityService securityService, long start)
-      throws IOException {
+  public void cmdExecute(final Message clientMessage, final ServerConnection serverConnection,
+      final SecurityService securityService, long start) throws IOException {
     CacheServerStats stats = serverConnection.getCacheServerStats();
     {
       long oldStart = start;

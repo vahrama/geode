@@ -226,8 +226,8 @@ public class PDXPostProcessorDUnitTest extends JUnit4DistributedTestCase {
       gfsh.close();
     });
 
-    PDXPostProcessor pp =
-        (PDXPostProcessor) LocatorServerStartupRule.serverStarter.getCache().getSecurityService().getPostProcessor();
+    PDXPostProcessor pp = (PDXPostProcessor) LocatorServerStartupRule.serverStarter.getCache()
+        .getSecurityService().getPostProcessor();
     assertEquals(pp.getCount(), 4);
   }
 

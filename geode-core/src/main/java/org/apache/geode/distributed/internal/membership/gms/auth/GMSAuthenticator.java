@@ -155,7 +155,8 @@ public class GMSAuthenticator implements Authenticator {
       LogWriter logWriter = this.services.getLogWriter();
       LogWriter securityLogWriter = this.services.getSecurityLogWriter();
 
-      // this.securityProps contains security-ldap-basedn but security-ldap-baseDomainName is expected
+      // this.securityProps contains security-ldap-basedn but security-ldap-baseDomainName is
+      // expected
       auth.init(this.securityProps, logWriter, securityLogWriter);
       return auth.authenticate(credentials, member);
 

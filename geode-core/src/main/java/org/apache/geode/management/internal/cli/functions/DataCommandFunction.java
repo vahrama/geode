@@ -172,7 +172,8 @@ public class DataCommandFunction extends FunctionAdapter implements InternalEnti
     String valueClass = request.getValueClass();
     String regionName = request.getRegionName();
     Boolean loadOnCacheMiss = request.isLoadOnCacheMiss();
-    return get(request.getPrincipal(), key, keyClass, valueClass, regionName, loadOnCacheMiss, securityService);
+    return get(request.getPrincipal(), key, keyClass, valueClass, regionName, loadOnCacheMiss,
+        securityService);
   }
 
   public DataCommandResult locateEntry(DataCommandRequest request) {

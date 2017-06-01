@@ -55,8 +55,8 @@ public class Get70 extends BaseCommand {
   }
 
   @Override
-  public void cmdExecute(final Message clientMessage, final ServerConnection serverConnection, final SecurityService securityService, long startparam)
-      throws IOException {
+  public void cmdExecute(final Message clientMessage, final ServerConnection serverConnection,
+      final SecurityService securityService, long startparam) throws IOException {
     long start = startparam;
     Part regionNamePart = null, keyPart = null, valuePart = null;
     String regionName = null;

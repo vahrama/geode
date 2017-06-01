@@ -63,8 +63,8 @@ public class ExecuteRegionFunction61 extends BaseCommand {
   private ExecuteRegionFunction61() {}
 
   @Override
-  public void cmdExecute(final Message clientMessage, final ServerConnection serverConnection, final SecurityService securityService, long start)
-      throws IOException {
+  public void cmdExecute(final Message clientMessage, final ServerConnection serverConnection,
+      final SecurityService securityService, long start) throws IOException {
     String regionName = null;
     Object function = null;
     Object args = null;
@@ -182,8 +182,9 @@ public class ExecuteRegionFunction61 extends BaseCommand {
         AbstractExecution execution = (AbstractExecution) FunctionService.onRegion(region);
         ChunkedMessage m = serverConnection.getFunctionResponseMessage();
         m.setTransactionId(clientMessage.getTransactionId());
-        resultSender = new ServerToClientFunctionResultSender(m,
-            MessageType.EXECUTE_REGION_FUNCTION_RESULT, serverConnection, functionObject, executeContext);
+        resultSender =
+            new ServerToClientFunctionResultSender(m, MessageType.EXECUTE_REGION_FUNCTION_RESULT,
+                serverConnection, functionObject, executeContext);
 
 
         if (execution instanceof PartitionedRegionFunctionExecutor) {
@@ -273,18 +274,19 @@ public class ExecuteRegionFunction61 extends BaseCommand {
     }
   }
 
-  private void sendException(byte hasResult, Message msg, String message, ServerConnection serverConnection,
-      Throwable e) throws IOException {
+  private void sendException(byte hasResult, Message msg, String message,
+      ServerConnection serverConnection, Throwable e) throws IOException {
     if (hasResult == 1) {
       writeFunctionResponseException(msg, MessageType.EXCEPTION, serverConnection, e);
       serverConnection.setAsTrue(RESPONDED);
     }
   }
 
-  private void sendError(byte hasResult, Message msg, String message, ServerConnection serverConnection)
-      throws IOException {
+  private void sendError(byte hasResult, Message msg, String message,
+      ServerConnection serverConnection) throws IOException {
     if (hasResult == 1) {
-      writeFunctionResponseError(msg, MessageType.EXECUTE_REGION_FUNCTION_ERROR, message, serverConnection);
+      writeFunctionResponseError(msg, MessageType.EXECUTE_REGION_FUNCTION_ERROR, message,
+          serverConnection);
       serverConnection.setAsTrue(RESPONDED);
     }
   }

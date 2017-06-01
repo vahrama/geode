@@ -49,8 +49,8 @@ public class Put extends BaseCommand {
   }
 
   @Override
-  public void cmdExecute(final Message clientMessage, final ServerConnection serverConnection, final SecurityService securityService, long start)
-      throws IOException, InterruptedException {
+  public void cmdExecute(final Message clientMessage, final ServerConnection serverConnection,
+      final SecurityService securityService, long start) throws IOException, InterruptedException {
     Part regionNamePart = null, keyPart = null, valuePart = null, callbackArgPart = null;
     String regionName = null;
     Object callbackArg = null, key = null;
@@ -114,8 +114,7 @@ public class Put extends BaseCommand {
         errMessage = LocalizedStrings.Put_THE_INPUT_REGION_NAME_FOR_THE_PUT_REQUEST_IS_NULL
             .toLocalizedString();
       }
-      writeErrorResponse(clientMessage, MessageType.PUT_DATA_ERROR, errMessage,
-          serverConnection);
+      writeErrorResponse(clientMessage, MessageType.PUT_DATA_ERROR, errMessage, serverConnection);
       serverConnection.setAsTrue(RESPONDED);
       return;
     }

@@ -15,8 +15,8 @@
 package org.apache.geode.internal.lang;
 
 /**
- * The ConfigInitialization class is a utility class to identify Initable objects and initialize them by
- * calling their init method.
+ * The ConfigInitialization class is a utility class to identify Initable objects and initialize
+ * them by calling their init method.
  * <p/>
  * 
  * @see org.apache.geode.internal.lang.Initable

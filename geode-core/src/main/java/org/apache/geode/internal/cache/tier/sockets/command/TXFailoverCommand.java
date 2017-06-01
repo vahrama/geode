@@ -50,7 +50,8 @@ public class TXFailoverCommand extends BaseCommand {
   private TXFailoverCommand() {}
 
   @Override
-  public void cmdExecute(final Message clientMessage, final ServerConnection serverConnection, final SecurityService securityService, long start)
+  public void cmdExecute(final Message clientMessage, final ServerConnection serverConnection,
+      final SecurityService securityService, long start)
       throws IOException, ClassNotFoundException, InterruptedException {
     serverConnection.setAsTrue(REQUIRES_RESPONSE);
     // Build the TXId for the transaction

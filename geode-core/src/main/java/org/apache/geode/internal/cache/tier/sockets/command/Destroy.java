@@ -49,7 +49,8 @@ public class Destroy extends BaseCommand {
   }
 
   @Override
-  public void cmdExecute(final Message clientMessage, final ServerConnection serverConnection, final SecurityService securityService, long startparam)
+  public void cmdExecute(final Message clientMessage, final ServerConnection serverConnection,
+      final SecurityService securityService, long startparam)
       throws IOException, InterruptedException {
     long start = startparam;
 

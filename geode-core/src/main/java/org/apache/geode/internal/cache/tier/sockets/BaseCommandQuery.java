@@ -52,10 +52,9 @@ public abstract class BaseCommandQuery extends BaseCommand {
    * @return true if successful execution false in case of failure.
    */
   protected boolean processQuery(Message msg, Query query, String queryString, Set regionNames,
-                                 long start, ServerCQ cqQuery, QueryOperationContext queryContext,
-                                 ServerConnection servConn,
-                                 boolean sendResults,
-                                 final SecurityService securityService) throws IOException, InterruptedException {
+      long start, ServerCQ cqQuery, QueryOperationContext queryContext, ServerConnection servConn,
+      boolean sendResults, final SecurityService securityService)
+      throws IOException, InterruptedException {
     return processQueryUsingParams(msg, query, queryString, regionNames, start, cqQuery,
         queryContext, servConn, sendResults, null, securityService);
   }
@@ -66,12 +65,9 @@ public abstract class BaseCommandQuery extends BaseCommand {
    * @return true if successful execution false in case of failure.
    */
   protected boolean processQueryUsingParams(Message msg, Query query, String queryString,
-                                            Set regionNames, long start, ServerCQ cqQuery,
-                                            QueryOperationContext queryContext,
-                                            ServerConnection servConn, boolean sendResults,
-                                            Object[] params,
-                                            final SecurityService securityService)
-      throws IOException, InterruptedException {
+      Set regionNames, long start, ServerCQ cqQuery, QueryOperationContext queryContext,
+      ServerConnection servConn, boolean sendResults, Object[] params,
+      final SecurityService securityService) throws IOException, InterruptedException {
     ChunkedMessage queryResponseMsg = servConn.getQueryResponseMessage();
     CacheServerStats stats = servConn.getCacheServerStats();
     CachedRegionHelper crHelper = servConn.getCachedRegionHelper();
@@ -214,7 +210,8 @@ public abstract class BaseCommandQuery extends BaseCommand {
           // send it as a part of ObjectPartList
           if (hasSerializedObjects) {
             sendResultsAsObjectPartList(numberOfChunks, servConn, selectResults.asList(), isStructs,
-                collectionType, queryString, cqQuery, sendCqResultsWithKey, sendResults, securityService);
+                collectionType, queryString, cqQuery, sendCqResultsWithKey, sendResults,
+                securityService);
           } else {
             sendResultsAsObjectArray(selectResults, numberOfChunks, servConn, isStructs,
                 collectionType, queryString, cqQuery, sendCqResultsWithKey, sendResults);
@@ -302,8 +299,7 @@ public abstract class BaseCommandQuery extends BaseCommand {
   }
 
   protected void sendCqResponse(int msgType, String msgStr, int txId, Throwable e,
-                                ServerConnection servConn,
-                                final SecurityService securityService) throws IOException {
+      ServerConnection servConn, final SecurityService securityService) throws IOException {
     ChunkedMessage cqMsg = servConn.getChunkedResponseMessage();
     if (logger.isDebugEnabled()) {
       logger.debug("CQ Response message :{}", msgStr);
@@ -444,10 +440,9 @@ public abstract class BaseCommandQuery extends BaseCommand {
   }
 
   private void sendResultsAsObjectPartList(int numberOfChunks, ServerConnection servConn, List objs,
-                                           boolean isStructs, CollectionType collectionType,
-                                           String queryString, ServerCQ cqQuery,
-                                           boolean sendCqResultsWithKey, boolean sendResults,
-                                           final SecurityService securityService) throws IOException {
+      boolean isStructs, CollectionType collectionType, String queryString, ServerCQ cqQuery,
+      boolean sendCqResultsWithKey, boolean sendResults, final SecurityService securityService)
+      throws IOException {
     int resultIndex = 0;
     Object result = null;
     for (int j = 0; j < numberOfChunks; j++) {
@@ -490,7 +485,8 @@ public abstract class BaseCommandQuery extends BaseCommand {
           result = objs.get(resultIndex);
         }
         if (sendResults) {
-          addToObjectPartList(serializedObjs, result, collectionType, false, servConn, isStructs, securityService);
+          addToObjectPartList(serializedObjs, result, collectionType, false, servConn, isStructs,
+              securityService);
         }
         resultIndex++;
       }
@@ -508,10 +504,8 @@ public abstract class BaseCommandQuery extends BaseCommand {
   }
 
   private void addToObjectPartList(ObjectPartList serializedObjs, Object res,
-                                   CollectionType collectionType, boolean lastChunk,
-                                   ServerConnection servConn,
-                                   boolean isStructs,
-                                   final SecurityService securityService) throws IOException {
+      CollectionType collectionType, boolean lastChunk, ServerConnection servConn,
+      boolean isStructs, final SecurityService securityService) throws IOException {
     if (isStructs && (res instanceof Struct)) {
       Object[] values = ((Struct) res).getFieldValues();
       // create another ObjectPartList for the struct
@@ -536,7 +530,7 @@ public abstract class BaseCommandQuery extends BaseCommand {
   }
 
   private void addObjectToPartList(ObjectPartList objPartList, Object key, Object value,
-                                   final SecurityService securityService) {
+      final SecurityService securityService) {
     Object object = value;
     boolean isObject = true;
     if (value instanceof CachedDeserializable) {

@@ -128,8 +128,7 @@ public interface SecurityService {
    *
    * TODO: expectedClazz is unused
    */
-  static <T> T getObjectOfTypeFromFactoryMethod(String factoryMethodName,
-      Class<T> expectedClazz) {
+  static <T> T getObjectOfTypeFromFactoryMethod(String factoryMethodName, Class<T> expectedClazz) {
     T actualObject;
     try {
       Method factoryMethod = ClassLoadUtil.methodFromName(factoryMethodName);

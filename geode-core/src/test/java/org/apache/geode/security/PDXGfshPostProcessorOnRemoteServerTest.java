@@ -101,8 +101,8 @@ public class PDXGfshPostProcessorOnRemoteServerTest {
     gfsh.executeAndVerifyCommand("query --query=\"select * from /AuthRegion\"");
 
     serverVM.invoke(() -> {
-      PDXPostProcessor pp =
-          (PDXPostProcessor) LocatorServerStartupRule.serverStarter.getCache().getSecurityService().getPostProcessor();
+      PDXPostProcessor pp = (PDXPostProcessor) LocatorServerStartupRule.serverStarter.getCache()
+          .getSecurityService().getPostProcessor();
       // verify that the post processor is called 6 times. (5 for the query, 1 for the get)
       assertEquals(pp.getCount(), 6);
     });

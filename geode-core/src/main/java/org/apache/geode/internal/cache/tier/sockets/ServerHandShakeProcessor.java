@@ -78,7 +78,8 @@ public class ServerHandShakeProcessor {
     currentServerVersion = Version.fromOrdinalOrCurrent(ver);
   }
 
-  public static boolean readHandShake(ServerConnection connection, SecurityService securityService) {
+  public static boolean readHandShake(ServerConnection connection,
+      SecurityService securityService) {
     boolean validHandShake = false;
     Version clientVersion = null;
     try {
@@ -197,7 +198,8 @@ public class ServerHandShakeProcessor {
     hdos.close();
   }
 
-  private static boolean readGFEHandshake(ServerConnection connection, Version clientVersion, SecurityService securityService) {
+  private static boolean readGFEHandshake(ServerConnection connection, Version clientVersion,
+      SecurityService securityService) {
     int handShakeTimeout = connection.getHandShakeTimeout();
     InternalLogWriter securityLogWriter = connection.getSecurityLogWriter();
     try {

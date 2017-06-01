@@ -46,7 +46,8 @@ public class GetClientPartitionAttributesCommand extends BaseCommand {
 
   @SuppressWarnings("unchecked")
   @Override
-  public void cmdExecute(final Message clientMessage, final ServerConnection serverConnection, final SecurityService securityService, long start)
+  public void cmdExecute(final Message clientMessage, final ServerConnection serverConnection,
+      final SecurityService securityService, long start)
       throws IOException, ClassNotFoundException, InterruptedException {
     String regionFullPath = null;
     regionFullPath = clientMessage.getPart(0).getString();

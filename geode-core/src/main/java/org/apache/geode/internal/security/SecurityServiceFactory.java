@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.geode.internal.security;
 
@@ -34,17 +32,21 @@ public class SecurityServiceFactory {
     // do not instantiate
   }
 
-  public static SecurityService create(CacheConfig cacheConfig, DistributionConfig distributionConfig) {
+  public static SecurityService create(CacheConfig cacheConfig,
+      DistributionConfig distributionConfig) {
     Properties securityConfig = getSecurityConfig(distributionConfig);
-    SecurityManager securityManager = getSecurityManager(getSecurityManagerFromConfig(cacheConfig), securityConfig);
-    PostProcessor postProcessor = getPostProcessor(getPostProcessorFromConfig(cacheConfig), securityConfig);
+    SecurityManager securityManager =
+        getSecurityManager(getSecurityManagerFromConfig(cacheConfig), securityConfig);
+    PostProcessor postProcessor =
+        getPostProcessor(getPostProcessorFromConfig(cacheConfig), securityConfig);
 
     SecurityService securityService = create(securityConfig, securityManager, postProcessor);
     // securityService.initSecurity(distributionConfig.getSecurityProps());
     return securityService;
   }
 
-  static SecurityService create(Properties securityConfig, SecurityManager securityManager, PostProcessor postProcessor) {
+  static SecurityService create(Properties securityConfig, SecurityManager securityManager,
+      PostProcessor postProcessor) {
     SecurityServiceType type = determineType(securityConfig, securityManager);
     switch (type) {
       case CUSTOM:
@@ -63,7 +65,8 @@ public class SecurityServiceFactory {
     }
   }
 
-  static SecurityServiceType determineType(Properties securityConfig, SecurityManager securityManager) {
+  static SecurityServiceType determineType(Properties securityConfig,
+      SecurityManager securityManager) {
     boolean hasShiroConfig = securityConfig.getProperty(SECURITY_SHIRO_INIT) != null;
     if (hasShiroConfig) {
       return SecurityServiceType.CUSTOM;
@@ -74,7 +77,8 @@ public class SecurityServiceFactory {
       return SecurityServiceType.ENABLED;
     }
 
-    boolean hasClientAuthenticator = securityConfig.getProperty(SECURITY_CLIENT_AUTHENTICATOR) != null;
+    boolean hasClientAuthenticator =
+        securityConfig.getProperty(SECURITY_CLIENT_AUTHENTICATOR) != null;
     boolean hasPeerAuthenticator = securityConfig.getProperty(SECURITY_PEER_AUTHENTICATOR) != null;
     if (hasClientAuthenticator || hasPeerAuthenticator) {
       return SecurityServiceType.LEGACY;
@@ -83,14 +87,16 @@ public class SecurityServiceFactory {
     return SecurityServiceType.DISABLED;
   }
 
-  static SecurityManager getSecurityManager(SecurityManager securityManager, Properties securityConfig) {
+  static SecurityManager getSecurityManager(SecurityManager securityManager,
+      Properties securityConfig) {
     if (securityManager != null) {
       return securityManager;
     }
 
     String securityManagerConfig = securityConfig.getProperty(SECURITY_MANAGER);
     if (StringUtils.isNotBlank(securityManagerConfig)) {
-      securityManager = SecurityService.getObjectOfTypeFromClassName(securityManagerConfig, SecurityManager.class);
+      securityManager = SecurityService.getObjectOfTypeFromClassName(securityManagerConfig,
+          SecurityManager.class);
       securityManager.init(securityConfig);
     }
 
@@ -105,7 +111,7 @@ public class SecurityServiceFactory {
     String postProcessorConfig = securityConfig.getProperty(SECURITY_POST_PROCESSOR);
     if (StringUtils.isNotBlank(postProcessorConfig)) {
       postProcessor =
-        SecurityService.getObjectOfTypeFromClassName(postProcessorConfig, PostProcessor.class);
+          SecurityService.getObjectOfTypeFromClassName(postProcessorConfig, PostProcessor.class);
       postProcessor.init(securityConfig);
     }
 

@@ -1,18 +1,16 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.apache.geode.internal.security;
 
@@ -105,7 +103,7 @@ public class EnabledSecurityService implements SecurityService {
     // First try get the principal out of AccessControlContext instead of Shiro's Thread context
     // since threads can be shared between JMX clients.
     javax.security.auth.Subject jmxSubject =
-      javax.security.auth.Subject.getSubject(AccessController.getContext());
+        javax.security.auth.Subject.getSubject(AccessController.getContext());
 
     if (jmxSubject != null) {
       Set<ShiroPrincipal> principals = jmxSubject.getPrincipals(ShiroPrincipal.class);
@@ -147,7 +145,7 @@ public class EnabledSecurityService implements SecurityService {
     } catch (ShiroException e) {
       logger.info(e.getMessage(), e);
       throw new AuthenticationFailedException(
-        "Authentication error. Please check your credentials.", e);
+          "Authentication error. Please check your credentials.", e);
     }
 
     return currentUser;
@@ -189,9 +187,10 @@ public class EnabledSecurityService implements SecurityService {
    * ThreadState state = null;
    * try {
    *   state = IntegratedSecurityService.bindSubject(subject);
-   *   //do the rest of the work as this subject
+   *   // do the rest of the work as this subject
    * } finally {
-   *   if(state!=null) state.clear();
+   *   if (state != null)
+   *     state.clear();
    * }
    * </pre>
    */
@@ -286,7 +285,8 @@ public class EnabledSecurityService implements SecurityService {
   }
 
   @Override
-  public void authorize(final String resource, final String operation, String regionName, final String key) {
+  public void authorize(final String resource, final String operation, String regionName,
+      final String key) {
     regionName = StringUtils.stripStart(regionName, "/");
     authorize(new ResourcePermission(resource, operation, regionName, key));
   }
@@ -338,12 +338,14 @@ public class EnabledSecurityService implements SecurityService {
   }
 
   @Override
-  public Object postProcess(final String regionPath, final Object key, final Object value, final boolean valueIsSerialized) {
+  public Object postProcess(final String regionPath, final Object key, final Object value,
+      final boolean valueIsSerialized) {
     return postProcess(null, regionPath, key, value, valueIsSerialized);
   }
 
   @Override
-  public Object postProcess(Object principal, final String regionPath, final Object key, final Object value, final boolean valueIsSerialized) {
+  public Object postProcess(Object principal, final String regionPath, final Object key,
+      final Object value, final boolean valueIsSerialized) {
     if (!needPostProcess()) {
       return value;
     }
@@ -412,7 +414,7 @@ public class EnabledSecurityService implements SecurityService {
       }
     } else {
       logger.error("Unable to set Shiro Global Session Timeout. Current SessionManager is '{}'.",
-        sessionManager == null ? "null" : sessionManager.getClass());
+          sessionManager == null ? "null" : sessionManager.getClass());
     }
   }
 }

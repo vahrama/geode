@@ -55,8 +55,8 @@ public class GetAllWithCallback extends BaseCommand {
   }
 
   @Override
-  public void cmdExecute(final Message clientMessage, final ServerConnection serverConnection, final SecurityService securityService, long start)
-      throws IOException, InterruptedException {
+  public void cmdExecute(final Message clientMessage, final ServerConnection serverConnection,
+      final SecurityService securityService, long start) throws IOException, InterruptedException {
     Part regionNamePart = null, keysPart = null, callbackPart = null;
     String regionName = null;
     Object[] keys = null;
@@ -133,7 +133,8 @@ public class GetAllWithCallback extends BaseCommand {
 
     // Send chunk response
     try {
-      fillAndSendGetAllResponseChunks(region, regionName, keys, serverConnection, callback, securityService);
+      fillAndSendGetAllResponseChunks(region, regionName, keys, serverConnection, callback,
+          securityService);
       serverConnection.setAsTrue(RESPONDED);
     } catch (Exception e) {
       // If an interrupted exception is thrown , rethrow it
@@ -147,7 +148,8 @@ public class GetAllWithCallback extends BaseCommand {
   }
 
   private void fillAndSendGetAllResponseChunks(Region region, String regionName, Object[] keys,
-      ServerConnection servConn, Object callback, SecurityService securityService) throws IOException {
+      ServerConnection servConn, Object callback, SecurityService securityService)
+      throws IOException {
 
     assert keys != null;
     int numKeys = keys.length;

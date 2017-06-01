@@ -56,7 +56,8 @@ public class CommandProcessor {
     this(null, new DisabledSecurityService());
   }
 
-  public CommandProcessor(Properties cacheProperties, SecurityService securityService) throws ClassNotFoundException, IOException {
+  public CommandProcessor(Properties cacheProperties, SecurityService securityService)
+      throws ClassNotFoundException, IOException {
     this.gfshParser = new GfshParser(cacheProperties);
     this.executionStrategy = new RemoteExecutionStrategy();
     this.logWrapper = LogWrapper.getInstance();

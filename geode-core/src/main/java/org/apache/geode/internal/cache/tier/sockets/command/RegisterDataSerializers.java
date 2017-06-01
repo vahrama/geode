@@ -37,7 +37,8 @@ public class RegisterDataSerializers extends BaseCommand {
 
   private RegisterDataSerializers() {}
 
-  public void cmdExecute(final Message clientMessage, final ServerConnection serverConnection, final SecurityService securityService, long start)
+  public void cmdExecute(final Message clientMessage, final ServerConnection serverConnection,
+      final SecurityService securityService, long start)
       throws IOException, ClassNotFoundException {
     if (logger.isDebugEnabled()) {
       logger.debug("{}: Received register dataserializer request ({} parts) from {}",

@@ -812,7 +812,8 @@ public class GemFireCacheImpl implements InternalCache, InternalClientCache, Has
       this.system = (InternalDistributedSystem) system;
       this.dm = this.system.getDistributionManager();
 
-      this.securityService = SecurityServiceFactory.create(this.cacheConfig, this.system.getConfig());
+      this.securityService =
+          SecurityServiceFactory.create(this.cacheConfig, this.system.getConfig());
 
       if (!this.isClient && PoolManager.getAll().isEmpty()) {
         // We only support management on members of a distributed system

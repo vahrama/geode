@@ -976,7 +976,8 @@ public class DataCommands implements CommandMarker {
             false);
       }
     } else {
-      dataResult = getfn.get(null, key, keyClass, valueClass, regionPath, loadOnCacheMiss, cache.getSecurityService());
+      dataResult = getfn.get(null, key, keyClass, valueClass, regionPath, loadOnCacheMiss,
+          cache.getSecurityService());
     }
     dataResult.setKeyClass(keyClass);
     if (valueClass != null) {

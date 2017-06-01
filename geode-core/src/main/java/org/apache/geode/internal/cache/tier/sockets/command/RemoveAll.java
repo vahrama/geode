@@ -57,8 +57,8 @@ public class RemoveAll extends BaseCommand {
   protected RemoveAll() {}
 
   @Override
-  public void cmdExecute(final Message clientMessage, final ServerConnection serverConnection, final SecurityService securityService, long startp)
-      throws IOException, InterruptedException {
+  public void cmdExecute(final Message clientMessage, final ServerConnection serverConnection,
+      final SecurityService securityService, long startp) throws IOException, InterruptedException {
     long start = startp; // copy this since we need to modify it
     Part regionNamePart = null, numberOfKeysPart = null, keyPart = null;
     String regionName = null;

@@ -49,7 +49,8 @@ public class RegisterInstantiators extends BaseCommand {
   private RegisterInstantiators() {}
 
   @Override
-  public void cmdExecute(final Message clientMessage, final ServerConnection serverConnection, final SecurityService securityService, long start)
+  public void cmdExecute(final Message clientMessage, final ServerConnection serverConnection,
+      final SecurityService securityService, long start)
       throws IOException, ClassNotFoundException {
     if (logger.isDebugEnabled()) {
       logger.debug("{}: Received register instantiator request ({} parts) from {}",

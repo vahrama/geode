@@ -256,7 +256,8 @@ public class HandShake implements ClientHandShake {
    * HandShake Constructor used by server side connection
    */
   public HandShake(Socket sock, int timeout, DistributedSystem sys, Version clientVersion,
-      byte communicationMode, SecurityService securityService) throws IOException, AuthenticationRequiredException {
+      byte communicationMode, SecurityService securityService)
+      throws IOException, AuthenticationRequiredException {
 
     this.clientVersion = clientVersion;
     this.system = sys;
@@ -1089,7 +1090,8 @@ public class HandShake implements ClientHandShake {
     // Initialize the keys when either the host is a client that has
     // non-blank setting for DH symmetric algo, or this is a server
     // that has authenticator defined.
-    if ((dhSKAlgo != null && dhSKAlgo.length() > 0) /*|| securityService.isClientSecurityRequired()*/) {
+    if ((dhSKAlgo != null
+        && dhSKAlgo.length() > 0) /* || securityService.isClientSecurityRequired() */) {
       KeyPairGenerator keyGen = KeyPairGenerator.getInstance("DH");
       DHParameterSpec dhSpec = new DHParameterSpec(dhP, dhG, dhL);
       keyGen.initialize(dhSpec);
@@ -1540,7 +1542,8 @@ public class HandShake implements ClientHandShake {
 
   // This assumes that authentication is the last piece of info in handshake
   public static Properties readCredentials(DataInputStream dis, DataOutputStream dos,
-      DistributedSystem system, SecurityService securityService) throws GemFireSecurityException, IOException {
+      DistributedSystem system, SecurityService securityService)
+      throws GemFireSecurityException, IOException {
 
     boolean requireAuthentication = securityService.isClientSecurityRequired();
     Properties credentials = null;
@@ -1675,7 +1678,8 @@ public class HandShake implements ClientHandShake {
    */
   public static Object verifyCredentials(String authenticatorMethod, Properties credentials,
       Properties securityProperties, InternalLogWriter logWriter,
-      InternalLogWriter securityLogWriter, DistributedMember member, SecurityService securityService)
+      InternalLogWriter securityLogWriter, DistributedMember member,
+      SecurityService securityService)
       throws AuthenticationRequiredException, AuthenticationFailedException {
 
     if (!AcceptorImpl.isAuthenticationRequired()) {
@@ -1708,7 +1712,8 @@ public class HandShake implements ClientHandShake {
     String methodName = this.system.getProperties().getProperty(SECURITY_CLIENT_AUTHENTICATOR);
     return verifyCredentials(methodName, this.credentials, this.system.getSecurityProperties(),
         (InternalLogWriter) this.system.getLogWriter(),
-        (InternalLogWriter) this.system.getSecurityLogWriter(), this.id.getDistributedMember(), this.securityService);
+        (InternalLogWriter) this.system.getSecurityLogWriter(), this.id.getDistributedMember(),
+        this.securityService);
   }
 
   public void sendCredentialsForWan(OutputStream out, InputStream in) {

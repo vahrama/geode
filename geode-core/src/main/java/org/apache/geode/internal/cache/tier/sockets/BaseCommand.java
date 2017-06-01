@@ -138,7 +138,8 @@ public abstract class BaseCommand implements Command {
   }
 
   @Override
-  public void execute(Message clientMessage, ServerConnection serverConnection, SecurityService securityService) {
+  public void execute(Message clientMessage, ServerConnection serverConnection,
+      SecurityService securityService) {
     // Read the request and update the statistics
     long start = DistributionStats.getStatTime();
     if (EntryLogger.isEnabled() && serverConnection != null) {
@@ -263,7 +264,9 @@ public abstract class BaseCommand implements Command {
     return tag;
   }
 
-  public abstract void cmdExecute(final Message clientMessage, final ServerConnection serverConnection, final SecurityService securityService, final long start) throws IOException, ClassNotFoundException, InterruptedException;
+  public abstract void cmdExecute(final Message clientMessage,
+      final ServerConnection serverConnection, final SecurityService securityService,
+      final long start) throws IOException, ClassNotFoundException, InterruptedException;
 
   protected void writeReply(Message origMsg, ServerConnection serverConnection) throws IOException {
     Message replyMsg = serverConnection.getReplyMessage();

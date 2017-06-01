@@ -174,9 +174,8 @@ public class ExecuteFunction66Test {
     when(this.securityService.isIntegratedSecurity()).thenReturn(true);
     doThrow(new NotAuthorizedException("")).when(this.securityService).authorizeDataWrite();
 
-    assertThatThrownBy(
-        () -> this.executeFunction66.cmdExecute(this.message, this.serverConnection, this.securityService, 0))
-            .isExactlyInstanceOf(NullPointerException.class);
+    assertThatThrownBy(() -> this.executeFunction66.cmdExecute(this.message, this.serverConnection,
+        this.securityService, 0)).isExactlyInstanceOf(NullPointerException.class);
 
     verify(this.securityService).authorizeDataWrite();
     // verify(this.chunkedResponseMessage).sendChunk(this.serverConnection);
@@ -202,9 +201,8 @@ public class ExecuteFunction66Test {
     doThrow(new NotAuthorizedException("")).when(this.authzRequest)
         .executeFunctionAuthorize(eq(FUNCTION_ID), any(), any(), any(), eq(false));
 
-    assertThatThrownBy(
-        () -> this.executeFunction66.cmdExecute(this.message, this.serverConnection, this.securityService, 0))
-            .isExactlyInstanceOf(NullPointerException.class);
+    assertThatThrownBy(() -> this.executeFunction66.cmdExecute(this.message, this.serverConnection,
+        this.securityService, 0)).isExactlyInstanceOf(NullPointerException.class);
 
     verify(this.securityService).authorizeDataWrite();
     // verify(this.chunkedResponseMessage).sendChunk(this.serverConnection);

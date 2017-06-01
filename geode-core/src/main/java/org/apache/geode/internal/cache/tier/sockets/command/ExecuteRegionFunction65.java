@@ -61,8 +61,8 @@ public class ExecuteRegionFunction65 extends BaseCommand {
   private ExecuteRegionFunction65() {}
 
   @Override
-  public void cmdExecute(final Message clientMessage, final ServerConnection serverConnection, final SecurityService securityService, long start)
-      throws IOException {
+  public void cmdExecute(final Message clientMessage, final ServerConnection serverConnection,
+      final SecurityService securityService, long start) throws IOException {
     String regionName = null;
     Object function = null;
     Object args = null;
@@ -206,8 +206,9 @@ public class ExecuteRegionFunction65 extends BaseCommand {
       AbstractExecution execution = (AbstractExecution) FunctionService.onRegion(region);
       ChunkedMessage m = serverConnection.getFunctionResponseMessage();
       m.setTransactionId(clientMessage.getTransactionId());
-      resultSender = new ServerToClientFunctionResultSender65(m,
-          MessageType.EXECUTE_REGION_FUNCTION_RESULT, serverConnection, functionObject, executeContext);
+      resultSender =
+          new ServerToClientFunctionResultSender65(m, MessageType.EXECUTE_REGION_FUNCTION_RESULT,
+              serverConnection, functionObject, executeContext);
 
 
       if (execution instanceof PartitionedRegionFunctionExecutor) {
@@ -223,7 +224,8 @@ public class ExecuteRegionFunction65 extends BaseCommand {
       if (logger.isDebugEnabled()) {
         logger.debug(
             "Executing Function: {} on Server: {} with Execution: {} functionState={} reexecute={} hasResult={}",
-            functionObject.getId(), serverConnection, execution, functionState, isReExecute, hasResult);
+            functionObject.getId(), serverConnection, execution, functionState, isReExecute,
+            hasResult);
       }
       if (hasResult == 1) {
         if (function instanceof String) {
@@ -314,8 +316,8 @@ public class ExecuteRegionFunction65 extends BaseCommand {
     }
   }
 
-  private void sendException(byte hasResult, Message msg, String message, ServerConnection serverConnection,
-      Throwable e) throws IOException {
+  private void sendException(byte hasResult, Message msg, String message,
+      ServerConnection serverConnection, Throwable e) throws IOException {
     synchronized (msg) {
       if (hasResult == 1) {
         writeFunctionResponseException(msg, MessageType.EXCEPTION, message, serverConnection, e);
@@ -324,8 +326,8 @@ public class ExecuteRegionFunction65 extends BaseCommand {
     }
   }
 
-  private void sendError(byte hasResult, Message msg, String message, ServerConnection serverConnection)
-      throws IOException {
+  private void sendError(byte hasResult, Message msg, String message,
+      ServerConnection serverConnection) throws IOException {
     synchronized (msg) {
       if (hasResult == 1) {
         writeFunctionResponseError(msg, MessageType.EXECUTE_REGION_FUNCTION_ERROR, message,
@@ -357,8 +359,8 @@ public class ExecuteRegionFunction65 extends BaseCommand {
         numParts = 2;
       }
       if (logger.isDebugEnabled()) {
-        logger.debug("{}: Sending exception chunk while reply in progress: ", serverConnection.getName(),
-            e);
+        logger.debug("{}: Sending exception chunk while reply in progress: ",
+            serverConnection.getName(), e);
       }
       functionResponseMsg.setServerConnection(serverConnection);
       functionResponseMsg.setLastChunkAndNumParts(true, numParts);

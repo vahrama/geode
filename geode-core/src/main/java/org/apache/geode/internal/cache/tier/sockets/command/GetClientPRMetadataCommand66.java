@@ -48,7 +48,8 @@ public class GetClientPRMetadataCommand66 extends BaseCommand {
   private GetClientPRMetadataCommand66() {}
 
   @Override
-  public void cmdExecute(final Message clientMessage, final ServerConnection serverConnection, final SecurityService securityService, long start)
+  public void cmdExecute(final Message clientMessage, final ServerConnection serverConnection,
+      final SecurityService securityService, long start)
       throws IOException, ClassNotFoundException, InterruptedException {
     String regionFullPath = null;
     CachedRegionHelper crHelper = serverConnection.getCachedRegionHelper();

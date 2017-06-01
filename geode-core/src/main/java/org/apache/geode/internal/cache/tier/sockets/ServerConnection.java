@@ -248,9 +248,9 @@ public class ServerConnection implements Runnable {
    * Creates a new <code>ServerConnection</code> that processes messages received from an edge
    * client over a given <code>Socket</code>.
    */
-  public ServerConnection(Socket socket, InternalCache internalCache, CachedRegionHelper helper, CacheServerStats stats,
-                          int hsTimeout, int socketBufferSize, String communicationModeStr, byte communicationMode,
-                          Acceptor acceptor, SecurityService securityService) {
+  public ServerConnection(Socket socket, InternalCache internalCache, CachedRegionHelper helper,
+      CacheServerStats stats, int hsTimeout, int socketBufferSize, String communicationModeStr,
+      byte communicationMode, Acceptor acceptor, SecurityService securityService) {
 
     StringBuilder buffer = new StringBuilder(100);
     if (((AcceptorImpl) acceptor).isGatewayReceiver()) {
@@ -1032,7 +1032,8 @@ public class ServerConnection implements Runnable {
 
       Object principal = HandShake.verifyCredentials(methodName, credentials,
           system.getSecurityProperties(), (InternalLogWriter) system.getLogWriter(),
-          (InternalLogWriter) system.getSecurityLogWriter(), this.proxyId.getDistributedMember(), this.securityService);
+          (InternalLogWriter) system.getSecurityLogWriter(), this.proxyId.getDistributedMember(),
+          this.securityService);
       if (principal instanceof Subject) {
         Subject subject = (Subject) principal;
         uniqueId = this.clientUserAuths.putSubject(subject);
