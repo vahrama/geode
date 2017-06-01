@@ -20,6 +20,7 @@ import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.rmi.registry.LocateRegistry;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -36,6 +37,7 @@ import javax.management.remote.JMXServiceURL;
 
 import org.apache.geode.internal.security.DisabledSecurityService;
 import org.apache.geode.internal.security.SecurityService;
+import org.apache.geode.internal.security.SecurityServiceFactory;
 import org.apache.geode.tools.pulse.internal.data.PulseConstants;
 import org.apache.geode.security.TestSecurityManager;
 import org.apache.shiro.SecurityUtils;
@@ -58,8 +60,7 @@ public class Server {
   private JMXConnectorServer cs;
   private String propFile = null;
 
-  public Server(int jmxPort, String properties, String jsonAuthFile,
-      final SecurityService securityService) throws Exception {
+  public Server(int jmxPort, String properties, String jsonAuthFile) throws Exception {
     this.propFile = properties;
     mbs = ManagementFactory.getPlatformMBeanServer();
     url = new JMXServiceURL(formJMXServiceURLString(DEFAULT_HOST, jmxPort));
@@ -85,6 +86,9 @@ public class Server {
       MBeanServer platformMBeanServer = ManagementFactory.getPlatformMBeanServer();
       platformMBeanServer.registerMBean(acc, accessControlMBeanON);
 
+      SecurityService securityService =
+          SecurityServiceFactory.create(securityProperties, new TestSecurityManager(), null);
+
       // wire in the authenticator and authorizaton
       JMXShiroAuthenticator interceptor = new JMXShiroAuthenticator(securityService);
       env.put(JMXConnectorServer.AUTHENTICATOR, interceptor);
@@ -99,7 +103,7 @@ public class Server {
     }
 
     try {
-      java.rmi.registry.LocateRegistry.createRegistry(jmxPort);
+      LocateRegistry.createRegistry(jmxPort);
       System.out.println("RMI registry ready.");
     } catch (Exception e) {
       System.out.println("Exception starting RMI registry:");
@@ -225,11 +229,10 @@ public class Server {
     return propVal.split(" ");
   }
 
-  public static Server createServer(int jmxPort, String properties, String jsonAuthFile,
-      final SecurityService securityService) {
+  public static Server createServer(int jmxPort, String properties, String jsonAuthFile) {
     Server s = null;
     try {
-      s = new Server(jmxPort, properties, jsonAuthFile, securityService);
+      s = new Server(jmxPort, properties, jsonAuthFile);
     } catch (Exception e) {
       e.printStackTrace();
       return null;

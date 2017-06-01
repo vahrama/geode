@@ -41,8 +41,7 @@ public class ServerRule extends ExternalResource {
     String jmxPropertiesFile = classLoader.getResource("test.properties").getPath();
 
     int jmxPort = AvailablePort.getRandomAvailablePort(AvailablePort.SOCKET);
-    server = Server.createServer(jmxPort, jmxPropertiesFile, jsonAuthFile,
-        new DisabledSecurityService());
+    server = Server.createServer(jmxPort, jmxPropertiesFile, jsonAuthFile);
     System.setProperty(PulseConstants.SYSTEM_PROPERTY_PULSE_HOST, LOCALHOST);
     System.setProperty(PulseConstants.SYSTEM_PROPERTY_PULSE_PORT, Integer.toString(jmxPort));
 

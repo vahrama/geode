@@ -45,7 +45,7 @@ public class SecurityServiceFactory {
     return securityService;
   }
 
-  static SecurityService create(Properties securityConfig, SecurityManager securityManager,
+  public static SecurityService create(Properties securityConfig, SecurityManager securityManager,
       PostProcessor postProcessor) {
     SecurityServiceType type = determineType(securityConfig, securityManager);
     switch (type) {
