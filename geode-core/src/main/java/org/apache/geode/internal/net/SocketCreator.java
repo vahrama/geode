@@ -14,32 +14,6 @@
  */
 package org.apache.geode.internal.net;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.geode.GemFireConfigException;
-import org.apache.geode.SystemConnectException;
-import org.apache.geode.SystemFailure;
-import org.apache.geode.admin.internal.InetAddressUtil;
-import org.apache.geode.cache.wan.GatewaySender;
-import org.apache.geode.cache.wan.GatewayTransportFilter;
-import org.apache.geode.distributed.ClientSocketFactory;
-import org.apache.geode.distributed.internal.DistributionConfig;
-import org.apache.geode.distributed.internal.DistributionConfigImpl;
-import org.apache.geode.distributed.internal.InternalDistributedSystem;
-import org.apache.geode.internal.ClassPathLoader;
-import org.apache.geode.internal.ConnectionWatcher;
-import org.apache.geode.internal.GfeConsoleReaderFactory;
-import org.apache.geode.internal.GfeConsoleReaderFactory.GfeConsoleReader;
-import org.apache.geode.internal.admin.SSLConfig;
-import org.apache.geode.internal.cache.wan.TransportFilterServerSocket;
-import org.apache.geode.internal.cache.wan.TransportFilterSocketFactory;
-import org.apache.geode.internal.i18n.LocalizedStrings;
-import org.apache.geode.internal.logging.LogService;
-import org.apache.geode.internal.logging.log4j.LocalizedMessage;
-import org.apache.geode.internal.security.SecurableCommunicationChannel;
-import org.apache.geode.internal.util.ArgumentRedactor;
-import org.apache.geode.internal.util.PasswordUtil;
-import org.apache.logging.log4j.Logger;
-
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.BindException;
@@ -75,6 +49,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
+
 import javax.naming.Context;
 import javax.naming.NamingEnumeration;
 import javax.naming.directory.Attribute;
@@ -96,6 +71,33 @@ import javax.net.ssl.SSLSocket;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509ExtendedKeyManager;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.logging.log4j.Logger;
+
+import org.apache.geode.GemFireConfigException;
+import org.apache.geode.SystemConnectException;
+import org.apache.geode.SystemFailure;
+import org.apache.geode.admin.internal.InetAddressUtil;
+import org.apache.geode.cache.wan.GatewaySender;
+import org.apache.geode.cache.wan.GatewayTransportFilter;
+import org.apache.geode.distributed.ClientSocketFactory;
+import org.apache.geode.distributed.internal.DistributionConfig;
+import org.apache.geode.distributed.internal.DistributionConfigImpl;
+import org.apache.geode.distributed.internal.InternalDistributedSystem;
+import org.apache.geode.internal.ClassPathLoader;
+import org.apache.geode.internal.ConnectionWatcher;
+import org.apache.geode.internal.GfeConsoleReaderFactory;
+import org.apache.geode.internal.GfeConsoleReaderFactory.GfeConsoleReader;
+import org.apache.geode.internal.admin.SSLConfig;
+import org.apache.geode.internal.cache.wan.TransportFilterServerSocket;
+import org.apache.geode.internal.cache.wan.TransportFilterSocketFactory;
+import org.apache.geode.internal.i18n.LocalizedStrings;
+import org.apache.geode.internal.logging.LogService;
+import org.apache.geode.internal.logging.log4j.LocalizedMessage;
+import org.apache.geode.internal.security.SecurableCommunicationChannel;
+import org.apache.geode.internal.util.ArgumentRedactor;
+import org.apache.geode.internal.util.PasswordUtil;
 
 /**
  * Analyze configuration data (gemfire.properties) and configure sockets accordingly for SSL.
@@ -262,7 +264,7 @@ public class SocketCreator {
   /**
    * Constructs new SocketCreator instance.
    */
-  SocketCreator(final SSLConfig sslConfig) {
+  public SocketCreator(final SSLConfig sslConfig) {
     this.sslConfig = sslConfig;
     initialize();
   }
@@ -294,7 +296,7 @@ public class SocketCreator {
    * hits and duplicate strings
    */
   public static synchronized String getHostName(InetAddress addr) {
-    String result = (String) hostNames.get(addr);
+    String result = hostNames.get(addr);
     if (result == null) {
       result = addr.getHostName();
       hostNames.put(addr, result);
@@ -307,7 +309,7 @@ public class SocketCreator {
    * hits and duplicate strings
    */
   public static synchronized String getCanonicalHostName(InetAddress addr, String hostName) {
-    String result = (String) hostNames.get(addr);
+    String result = hostNames.get(addr);
     if (result == null) {
       hostNames.put(addr, hostName);
       return hostName;
@@ -331,7 +333,6 @@ public class SocketCreator {
    * <p>
    * Caller must synchronize on the SocketCreator instance.
    */
-  @SuppressWarnings("hiding")
   private void initialize() {
     try {
       // set p2p values...
@@ -382,7 +383,7 @@ public class SocketCreator {
 
   /**
    * Creates & configures the SSLContext when SSL is enabled.
-   * 
+   *
    * @return new SSLContext configured using the given protocols & properties
    *
    * @throws GeneralSecurityException if security information can not be found
@@ -400,7 +401,7 @@ public class SocketCreator {
 
   /**
    * Used by CacheServerLauncher and SystemAdmin to read the properties from console
-   * 
+   *
    * @param env Map in which the properties are to be read from console.
    */
   public static void readSSLProperties(Map<String, String> env) {
@@ -411,7 +412,7 @@ public class SocketCreator {
    * Used to read the properties from console. AgentLauncher calls this method directly & ignores
    * gemfire.properties. CacheServerLauncher and SystemAdmin call this through
    * {@link #readSSLProperties(Map)} and do NOT ignore gemfire.properties.
-   * 
+   *
    * @param env Map in which the properties are to be read from console.
    * @param ignoreGemFirePropsFile if <code>false</code> existing gemfire.properties file is read,
    *        if <code>true</code>, properties from gemfire.properties file are ignored.
@@ -434,14 +435,8 @@ public class SocketCreator {
             throw new GemFireConfigException(
                 "SSL properties are empty, but a console is not available");
           }
-          if (key.toLowerCase().contains("password")) {
-            char[] password = consoleReader.readPassword("Please enter " + key + ": ");
-            env.put(key, PasswordUtil.encrypt(new String(password), false));
-          } else {
-            String val = consoleReader.readLine("Please enter " + key + ": ");
-            env.put(key, val);
-          }
-
+          String val = consoleReader.readLine("Please enter " + key + ": ");
+          env.put(key, val);
         }
       }
     }
@@ -541,6 +536,10 @@ public class SocketCreator {
       NoSuchAlgorithmException, CertificateException, UnrecoverableKeyException {
     GfeConsoleReader consoleReader = GfeConsoleReaderFactory.getDefaultConsoleReader();
 
+    if (sslConfig.getKeystore() == null) {
+      return null;
+    }
+
     KeyManager[] keyManagers = null;
     String keyStoreType = sslConfig.getKeystoreType();
     if (StringUtils.isEmpty(keyStoreType)) {
@@ -615,7 +614,7 @@ public class SocketCreator {
 
     /**
      * Constructor.
-     * 
+     *
      * @param mgr The X509KeyManager used as a delegate
      * @param keyAlias The alias name of the server's keypair and supporting certificate chain
      */
@@ -727,7 +726,7 @@ public class SocketCreator {
       } catch (BindException e) {
         BindException throwMe =
             new BindException(LocalizedStrings.SocketCreator_FAILED_TO_CREATE_SERVER_SOCKET_ON_0_1
-                .toLocalizedString(new Object[] {bindAddr, Integer.valueOf(nport)}));
+                .toLocalizedString(bindAddr, Integer.valueOf(nport)));
         throwMe.initCause(e);
         throw throwMe;
       }
@@ -784,7 +783,7 @@ public class SocketCreator {
       } catch (BindException e) {
         BindException throwMe =
             new BindException(LocalizedStrings.SocketCreator_FAILED_TO_CREATE_SERVER_SOCKET_ON_0_1
-                .toLocalizedString(new Object[] {bindAddr, Integer.valueOf(nport)}));
+                .toLocalizedString(bindAddr, Integer.valueOf(nport)));
         throwMe.initCause(e);
         throw throwMe;
       }
@@ -795,7 +794,7 @@ public class SocketCreator {
   /**
    * Creates or bind server socket to a random port selected from tcp-port-range which is same as
    * membership-port-range.
-   * 
+   *
    * @param ba
    * @param backlog
    * @param isBindAddress
@@ -815,7 +814,7 @@ public class SocketCreator {
   /**
    * Creates or bind server socket to a random port selected from tcp-port-range which is same as
    * membership-port-range.
-   * 
+   *
    * @param ba
    * @param backlog
    * @param isBindAddress
@@ -1025,14 +1024,6 @@ public class SocketCreator {
               ex);
           throw ex;
         }
-      } catch (SSLException ex) {
-        logger
-            .fatal(
-                LocalizedMessage.create(
-                    LocalizedStrings.SocketCreator_SSL_ERROR_IN_CONNECTING_TO_PEER_0_1,
-                    new Object[] {socket.getInetAddress(), Integer.valueOf(socket.getPort())}),
-                ex);
-        throw ex;
       }
     }
   }
@@ -1112,16 +1103,7 @@ public class SocketCreator {
               .create(LocalizedStrings.SocketCreator_SSL_ERROR_IN_AUTHENTICATING_PEER), ex);
           throw ex;
         }
-      } catch (SSLException ex) {
-        logger
-            .fatal(
-                LocalizedMessage.create(
-                    LocalizedStrings.SocketCreator_SSL_ERROR_IN_CONNECTING_TO_PEER_0_1,
-                    new Object[] {socket.getInetAddress(), Integer.valueOf(socket.getPort())}),
-                ex);
-        throw ex;
       }
-
     }
   }
 
@@ -1223,7 +1205,7 @@ public class SocketCreator {
 
   /**
    * This method uses JNDI to look up an address in DNS and return its name
-   * 
+   *
    * @param addr
    *
    * @return the host name associated with the address or null if lookup isn't possible or there is
@@ -1299,7 +1281,7 @@ public class SocketCreator {
    * Fails Assertion if the conversion would result in <code>java.lang.UnknownHostException</code>.
    * <p>
    * Any leading slashes on host will be ignored.
-   * 
+   *
    * @param host string version the InetAddress
    *
    * @return the host converted to InetAddress instance

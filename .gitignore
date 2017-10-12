@@ -14,7 +14,7 @@ build-eclipse/
 /tags
 out/
 
-
+.DS_store
 *.iml
 *.ipr
 *.iws
@@ -25,6 +25,5 @@ out/
 *.dat
 *.rej
 *.orig
-geode-spark-connector/**/target/
-geode-spark-connector/project/project/
 geode-pulse/screenshots/
+/jpf.properties

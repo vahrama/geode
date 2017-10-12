@@ -551,7 +551,7 @@ public class GatewaySenderAdvisor extends DistributionAdvisor {
       this.senderEventListenerClassNames = DataSerializer.readArrayList(in);
       this.isDiskSynchronous = in.readBoolean();
       this.dispatcherThreads = in.readInt();
-      if (InternalDataSerializer.getVersionForDataStream(in).compareTo(Version.CURRENT) < 0) {
+      if (InternalDataSerializer.getVersionForDataStream(in).compareTo(Version.GFE_90) < 0) {
         Gateway.OrderPolicy oldOrderPolicy = DataSerializer.readObject(in);
         if (oldOrderPolicy != null) {
           if (oldOrderPolicy.name().equals(OrderPolicy.KEY.name())) {
@@ -592,7 +592,7 @@ public class GatewaySenderAdvisor extends DistributionAdvisor {
       DataSerializer.writeArrayList(senderEventListenerClassNames, out);
       out.writeBoolean(isDiskSynchronous);
       out.writeInt(dispatcherThreads);
-      if (InternalDataSerializer.getVersionForDataStream(out).compareTo(Version.CURRENT) < 0
+      if (InternalDataSerializer.getVersionForDataStream(out).compareTo(Version.GFE_90) < 0
           && this.orderPolicy != null) {
         String orderPolicyName = this.orderPolicy.name();
         if (orderPolicyName.equals(Gateway.OrderPolicy.KEY.name())) {
@@ -688,7 +688,7 @@ public class GatewaySenderAdvisor extends DistributionAdvisor {
     @Override
     public void processIncoming(DistributionManager dm, String adviseePath, boolean removeProfile,
         boolean exchangeProfiles, final List<Profile> replyProfiles) {
-      InternalCache cache = GemFireCacheImpl.getInstance();
+      InternalCache cache = dm.getCache();
       if (cache != null) {
         AbstractGatewaySender sender = (AbstractGatewaySender) cache.getGatewaySender(adviseePath);
         handleDistributionAdvisee(sender, removeProfile, exchangeProfiles, replyProfiles);

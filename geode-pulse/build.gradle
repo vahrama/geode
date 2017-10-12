@@ -39,6 +39,10 @@ dependencies {
   compile 'commons-lang:commons-lang:' + project.'commons-lang.version'
   compile 'org.springframework.ldap:spring-ldap-core:' + project.'spring-ldap-core.version'
   runtime 'org.springframework:spring-expression:' + project.'springframework.version'
+
+  // added only to ensure common version with other geode modules
+  runtime 'org.slf4j:slf4j-api:' + project.'slf4j-api.version'
+
   compile ('org.springframework.security:spring-security-config:' + project.'spring-security.version') {
     exclude module: 'aopalliance'
     exclude module: 'spring-expression'
@@ -82,9 +86,6 @@ dependencies {
   testCompile 'org.seleniumhq.selenium:selenium-remote-driver:' + project.'selenium.version'
   testCompile 'org.seleniumhq.selenium:selenium-support:' + project.'selenium.version'
   testCompile 'org.springframework:spring-test:' + project.'springframework.version'
-  testCompile 'org.powermock:powermock-core:' + project.'powermock.version'
-  testCompile 'org.powermock:powermock-module-junit4:' + project.'powermock.version'
-  testCompile 'org.powermock:powermock-api-mockito:' + project.'powermock.version'
   testCompile 'com.tdunning:json:' + project.'open-json.version'
 
   testRuntime 'com.google.code.gson:gson:' + project.'google-gson.version'

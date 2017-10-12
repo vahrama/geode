@@ -484,6 +484,7 @@ public abstract class AbstractIndex implements IndexProtocol {
   @Override
   public boolean addIndexMapping(RegionEntry entry) throws IMQException {
     addMapping(entry);
+
     // if no exception, then success
     return true;
   }
@@ -516,7 +517,7 @@ public abstract class AbstractIndex implements IndexProtocol {
     return true;
   }
 
-  @Override
+
   public boolean isValid() {
     return this.isValid;
   }
@@ -2002,7 +2003,8 @@ public abstract class AbstractIndex implements IndexProtocol {
    */
   synchronized void setPdxStringFlag(Object key) {
     // For Null and Undefined keys do not set the isIndexedPdxKeysFlagSet flag
-    if (key == null || key == IndexManager.NULL || key == QueryService.UNDEFINED) {
+    if (isIndexedPdxKeysFlagSet || key == null || key == IndexManager.NULL
+        || key == QueryService.UNDEFINED) {
       return;
     }
     if (!this.isIndexedPdxKeys) {
@@ -2079,5 +2081,9 @@ public abstract class AbstractIndex implements IndexProtocol {
 
   public void setPopulated(boolean isPopulated) {
     this.isPopulated = isPopulated;
+  }
+
+  boolean isIndexOnPdxKeys() {
+    return isIndexedPdxKeys;
   }
 }

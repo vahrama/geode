@@ -43,11 +43,13 @@ import org.apache.logging.log4j.Logger;
 import org.apache.geode.CancelException;
 import org.apache.geode.DataSerializer;
 import org.apache.geode.SystemFailure;
+import org.apache.geode.cache.IncompatibleVersionException;
 import org.apache.geode.distributed.internal.ClusterConfigurationService;
 import org.apache.geode.distributed.internal.DistributionConfig;
 import org.apache.geode.distributed.internal.DistributionConfigImpl;
 import org.apache.geode.distributed.internal.DistributionStats;
 import org.apache.geode.distributed.internal.InternalDistributedSystem;
+import org.apache.geode.distributed.internal.InternalLocator;
 import org.apache.geode.distributed.internal.PoolStatHelper;
 import org.apache.geode.distributed.internal.PooledExecutorWithDMStats;
 import org.apache.geode.internal.DSFIDFactory;
@@ -56,7 +58,9 @@ import org.apache.geode.internal.Version;
 import org.apache.geode.internal.VersionedDataInputStream;
 import org.apache.geode.internal.VersionedDataOutputStream;
 import org.apache.geode.internal.cache.InternalCache;
-import org.apache.geode.internal.cache.tier.Acceptor;
+import org.apache.geode.internal.cache.tier.CommunicationMode;
+import org.apache.geode.internal.cache.tier.sockets.ClientProtocolProcessor;
+import org.apache.geode.internal.cache.tier.sockets.ClientProtocolService;
 import org.apache.geode.internal.cache.tier.sockets.HandShake;
 import org.apache.geode.internal.logging.LogService;
 import org.apache.geode.internal.net.SocketCreator;
@@ -79,6 +83,7 @@ public class TcpServer {
    * <p>
    * This should be incremented if the gossip message structures change
    * <p>
+   * 0 - special indicator of a non-gossip message from a client<br>
    * 1000 - gemfire 5.5 - using java serialization<br>
    * 1001 - 5.7 - using DataSerializable and supporting server locator messages.<br>
    * 1002 - 7.1 - sending GemFire version along with GOSSIP_VERSION in each request.
@@ -87,12 +92,18 @@ public class TcpServer {
    * version number
    */
   public final static int GOSSIPVERSION = 1002;
+  public final static int NON_GOSSIP_REQUEST_VERSION = 0;
   // Don't change it ever. We did NOT send GemFire version in a Gossip request till 1001 version.
   // This GOSSIPVERSION is used in _getVersionForAddress request for getting GemFire version of a
   // GossipServer.
   public final static int OLDGOSSIPVERSION = 1001;
 
   private static/* GemStoneAddition */ final Map GOSSIP_TO_GEMFIRE_VERSION_MAP = new HashMap();
+
+  /**
+   * For the new client-server protocol, which ignores the usual handshake mechanism.
+   */
+  public static final byte PROTOBUF_CLIENT_SERVER_PROTOCOL = (byte) 110;
 
   // For test purpose only
   public static boolean isTesting = false;
@@ -121,14 +132,17 @@ public class TcpServer {
   private InetAddress bind_address;
   private volatile boolean shuttingDown = false; // GemStoneAddition
   private final PoolStatHelper poolHelper;
+  private final InternalLocator internalLocator;
   private final TcpHandler handler;
+  private final ClientProtocolService clientProtocolService;
+
 
   private PooledExecutorWithDMStats executor;
   private final ThreadGroup threadGroup;
   private final String threadName;
   private volatile Thread serverThread;
 
-  private SocketCreator socketCreator;
+  protected SocketCreator socketCreator;
 
   /*
    * GemStoneAddition - Initialize versions map. Warning: This map must be compatible with all
@@ -142,13 +156,23 @@ public class TcpServer {
     GOSSIP_TO_GEMFIRE_VERSION_MAP.put(OLDGOSSIPVERSION, Version.GFE_57.ordinal());
   }
 
+  /**
+   * returns the message handler used for client/locator communications processing
+   */
+  public ClientProtocolService getClientProtocolService() {
+    return clientProtocolService;
+  }
+
   public TcpServer(int port, InetAddress bind_address, Properties sslConfig,
       DistributionConfigImpl cfg, TcpHandler handler, PoolStatHelper poolHelper,
-      ThreadGroup threadGroup, String threadName) {
+      ThreadGroup threadGroup, String threadName, InternalLocator internalLocator,
+      ClientProtocolService clientProtocolService) {
     this.port = port;
     this.bind_address = bind_address;
     this.handler = handler;
     this.poolHelper = poolHelper;
+    this.internalLocator = internalLocator;
+    this.clientProtocolService = clientProtocolService;
     // register DSFID types first; invoked explicitly so that all message type
     // initializations do not happen in first deserialization on a possibly
     // "precious" thread
@@ -164,13 +188,14 @@ public class TcpServer {
       }
       cfg = new DistributionConfigImpl(sslConfig);
     }
+  }
 
+  protected SocketCreator getSocketCreator() {
     if (this.socketCreator == null) {
       this.socketCreator =
           SocketCreatorFactory.getSocketCreatorForComponent(SecurableCommunicationChannel.LOCATOR);
-    } else {
-      throw new RuntimeException("The socket Creator already exists");
     }
+    return socketCreator;
   }
 
   private static PooledExecutorWithDMStats createExecutor(PoolStatHelper poolHelper,
@@ -210,10 +235,10 @@ public class TcpServer {
   private void startServerThread() throws IOException {
     if (srv_sock == null || srv_sock.isClosed()) {
       if (bind_address == null) {
-        srv_sock = socketCreator.createServerSocket(port, BACKLOG);
+        srv_sock = getSocketCreator().createServerSocket(port, BACKLOG);
         bind_address = srv_sock.getInetAddress();
       } else {
-        srv_sock = socketCreator.createServerSocket(port, BACKLOG, bind_address);
+        srv_sock = getSocketCreator().createServerSocket(port, BACKLOG, bind_address);
       }
 
       if (log.isInfoEnabled()) {
@@ -241,8 +266,6 @@ public class TcpServer {
   }
 
   public void join() throws InterruptedException {
-    // this.log.info("TcpServer@"+System.identityHashCode(this)+" join() invoked. Server
-    // thread="+serverThread+"@"+System.identityHashCode(serverThread)+";alive="+serverThread.isAlive());
     if (serverThread != null) {
       serverThread.join();
     }
@@ -334,106 +357,120 @@ public class TcpServer {
    * fix for bug 33711 - client requests are spun off to another thread for processing. Requests are
    * synchronized in processGossip.
    */
-  private void processRequest(final Socket sock) {
+  private void processRequest(final Socket socket) {
     executor.execute(() -> {
       long startTime = DistributionStats.getStatTime();
       DataInputStream input = null;
       Object request, response;
       try {
-        socketCreator.configureServerSSLSocket(sock);
-        sock.setSoTimeout(READ_TIMEOUT);
+
+        socket.setSoTimeout(READ_TIMEOUT);
+        getSocketCreator().configureServerSSLSocket(socket);
+
         try {
-          input = new DataInputStream(sock.getInputStream());
+          input = new DataInputStream(socket.getInputStream());
         } catch (StreamCorruptedException e) {
           // Some garbage can be left on the socket stream
           // if a peer disappears at exactly the wrong moment.
           log.debug("Discarding illegal request from "
-              + (sock.getInetAddress().getHostAddress() + ":" + sock.getPort()), e);
+              + (socket.getInetAddress().getHostAddress() + ":" + socket.getPort()), e);
           return;
         }
-
-        int gossipVersion = readGossipVersion(sock, input);
+        int gossipVersion = readGossipVersion(socket, input);
 
         short versionOrdinal;
-        if (gossipVersion <= getCurrentGossipVersion()
+        if (gossipVersion == NON_GOSSIP_REQUEST_VERSION) {
+          if (input.readUnsignedByte() == PROTOBUF_CLIENT_SERVER_PROTOCOL
+              && Boolean.getBoolean("geode.feature-protobuf-protocol")) {
+            if (clientProtocolService == null) {
+              // this shouldn't happen.
+              log.error("Client protocol service not initialized but a request was received");
+              socket.close();
+              throw new IOException(
+                  "Client protocol service not initialized but a request was received");
+            } else {
+              try (ClientProtocolProcessor pipeline =
+                  clientProtocolService.createProcessorForLocator(internalLocator)) {
+                pipeline.processMessage(input, socket.getOutputStream());
+              } catch (IncompatibleVersionException e) {
+                // should not happen on the locator as there is no handshake.
+                log.error("Unexpected exception in client message processing", e);
+              }
+            }
+          } else {
+            rejectUnknownProtocolConnection(socket, gossipVersion);
+          }
+        } else if (gossipVersion <= getCurrentGossipVersion()
             && GOSSIP_TO_GEMFIRE_VERSION_MAP.containsKey(gossipVersion)) {
           // Create a versioned stream to remember sender's GemFire version
           versionOrdinal = (short) GOSSIP_TO_GEMFIRE_VERSION_MAP.get(gossipVersion);
+
+          if (Version.GFE_71.compareTo(versionOrdinal) <= 0) {
+            // Recent versions of TcpClient will send the version ordinal
+            versionOrdinal = input.readShort();
+          }
+
+          if (log.isDebugEnabled() && versionOrdinal != Version.CURRENT_ORDINAL) {
+            log.debug("Locator reading request from " + socket.getInetAddress() + " with version "
+                + Version.fromOrdinal(versionOrdinal, false));
+          }
+          input = new VersionedDataInputStream(input, Version.fromOrdinal(versionOrdinal, false));
+          request = DataSerializer.readObject(input);
+          if (log.isDebugEnabled()) {
+            log.debug("Locator received request " + request + " from " + socket.getInetAddress());
+          }
+          if (request instanceof ShutdownRequest) {
+            shuttingDown = true;
+            // Don't call shutdown from within the worker thread, see java bug #6576792.
+            // Closing the socket will cause our acceptor thread to shutdown the executor
+            this.serverSocketPortAtClose = srv_sock.getLocalPort();
+            srv_sock.close();
+            response = new ShutdownResponse();
+          } else if (request instanceof InfoRequest) {
+            response = handleInfoRequest(request);
+          } else if (request instanceof VersionRequest) {
+            response = handleVersionRequest(request);
+          } else {
+            response = handler.processRequest(request);
+          }
+
+          handler.endRequest(request, startTime);
+
+          startTime = DistributionStats.getStatTime();
+          if (response != null) {
+            DataOutputStream output = new DataOutputStream(socket.getOutputStream());
+            if (versionOrdinal != Version.CURRENT_ORDINAL) {
+              output =
+                  new VersionedDataOutputStream(output, Version.fromOrdinal(versionOrdinal, false));
+            }
+            DataSerializer.writeObject(response, output);
+            output.flush();
+          }
+
+          handler.endResponse(request, startTime);
         } else {
           // Close the socket. We can not accept requests from a newer version
-          try {
-            sock.getOutputStream().write("unknown protocol version".getBytes());
-            sock.getOutputStream().flush();
-          } catch (IOException e) {
-            log.debug(
-                "exception in sending reply to process using unknown protocol " + gossipVersion, e);
-          }
-          sock.close();
-          return;
+          rejectUnknownProtocolConnection(socket, gossipVersion);
         }
-        if (Version.GFE_71.compareTo(versionOrdinal) <= 0) {
-          // Recent versions of TcpClient will send the version ordinal
-          versionOrdinal = input.readShort();
-        }
-
-        if (log.isDebugEnabled() && versionOrdinal != Version.CURRENT_ORDINAL) {
-          log.debug("Locator reading request from " + sock.getInetAddress() + " with version "
-              + Version.fromOrdinal(versionOrdinal, false));
-        }
-        input = new VersionedDataInputStream(input, Version.fromOrdinal(versionOrdinal, false));
-        request = DataSerializer.readObject(input);
-        if (log.isDebugEnabled()) {
-          log.debug("Locator received request " + request + " from " + sock.getInetAddress());
-        }
-        if (request instanceof ShutdownRequest) {
-          shuttingDown = true;
-          // Don't call shutdown from within the worker thread, see java bug #6576792.
-          // Closing the socket will cause our acceptor thread to shutdown the executor
-          this.serverSocketPortAtClose = srv_sock.getLocalPort();
-          srv_sock.close();
-          response = new ShutdownResponse();
-        } else if (request instanceof InfoRequest) {
-          response = handleInfoRequest(request);
-        } else if (request instanceof VersionRequest) {
-          response = handleVersionRequest(request);
-        } else {
-          response = handler.processRequest(request);
-        }
-
-        handler.endRequest(request, startTime);
-
-        startTime = DistributionStats.getStatTime();
-        if (response != null) {
-          DataOutputStream output = new DataOutputStream(sock.getOutputStream());
-          if (versionOrdinal != Version.CURRENT_ORDINAL) {
-            output =
-                new VersionedDataOutputStream(output, Version.fromOrdinal(versionOrdinal, false));
-          }
-          DataSerializer.writeObject(response, output);
-          output.flush();
-        }
-
-        handler.endResponse(request, startTime);
-
       } catch (EOFException ignore) {
         // client went away - ignore
       } catch (CancelException ignore) {
         // ignore
       } catch (ClassNotFoundException ex) {
         String sender = null;
-        if (sock != null) {
-          sender = sock.getInetAddress().getHostAddress();
+        if (socket != null) {
+          sender = socket.getInetAddress().getHostAddress();
         }
         log.info("Unable to process request from " + sender + " exception=" + ex.getMessage());
       } catch (Exception ex) {
         String sender = null;
-        if (sock != null) {
-          sender = sock.getInetAddress().getHostAddress();
+        if (socket != null) {
+          sender = socket.getInetAddress().getHostAddress();
         }
         if (ex instanceof IOException) {
           // IOException could be caused by a client failure. Don't
           // log with severe.
-          if (!sock.isClosed()) {
+          if (!socket.isClosed()) {
             log.info("Exception in processing request from " + sender, ex);
           }
         } else {
@@ -446,8 +483,8 @@ public class TcpServer {
       } catch (Throwable ex) {
         SystemFailure.checkFailure();
         String sender = null;
-        if (sock != null) {
-          sender = sock.getInetAddress().getHostAddress();
+        if (socket != null) {
+          sender = socket.getInetAddress().getHostAddress();
         }
         try {
           log.fatal("Exception in processing request from " + sender, ex);
@@ -460,7 +497,7 @@ public class TcpServer {
         }
       } finally {
         try {
-          sock.close();
+          socket.close();
         } catch (IOException ignore) {
           // ignore
         }
@@ -468,11 +505,22 @@ public class TcpServer {
     });
   }
 
+  private void rejectUnknownProtocolConnection(Socket socket, int gossipVersion)
+      throws IOException {
+    try {
+      socket.getOutputStream().write("unknown protocol version".getBytes());
+      socket.getOutputStream().flush();
+    } catch (IOException e) {
+      log.debug("exception in sending reply to process using unknown protocol " + gossipVersion, e);
+    }
+    socket.close();
+  }
+
   private int readGossipVersion(Socket sock, DataInputStream input) throws Exception {
     // read the first byte & check for an improperly configured client pool trying
     // to contact a cache server
     int firstByte = input.readUnsignedByte();
-    if (firstByte >= Acceptor.CLIENT_TO_SERVER) {
+    if (CommunicationMode.isValidMode(firstByte)) {
       sock.getOutputStream().write(HandShake.REPLY_SERVER_IS_LOCATOR);
       throw new Exception("Improperly configured client detected - use addPoolLocator to "
           + "configure its locators instead of addPoolServer.");
@@ -548,4 +596,5 @@ public class TcpServer {
   public static Map getGossipVersionMapForTestOnly() {
     return GOSSIP_TO_GEMFIRE_VERSION_MAP;
   }
+
 }

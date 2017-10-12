@@ -16,7 +16,6 @@ package org.apache.geode.management.internal.cli.functions;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
 
 import org.apache.geode.management.ManagementException;
 import org.apache.geode.management.internal.cli.util.BytesToString;
@@ -40,7 +39,7 @@ public class SizeExportLogsFunction extends ExportLogsFunction implements Functi
   @Override
   public void execute(final FunctionContext context) {
     try {
-      InternalCache cache = GemFireCacheImpl.getInstance();
+      InternalCache cache = (InternalCache) context.getCache();
       DistributionConfig config = cache.getInternalDistributedSystem().getConfig();
       Args args = (Args) context.getArguments();
       long diskAvailable = getDiskAvailable(config);
@@ -49,7 +48,7 @@ public class SizeExportLogsFunction extends ExportLogsFunction implements Functi
 
       BytesToString bytesToString = new BytesToString();
       if (estimatedSize == 0 || estimatedSize < diskAvailable) {
-        context.getResultSender().lastResult(Arrays.asList(estimatedSize));
+        context.getResultSender().lastResult(estimatedSize);
       } else {
         StringBuilder sb = new StringBuilder().append("Estimated disk space required (")
             .append(bytesToString.of(estimatedSize)).append(") to consolidate logs on member ")

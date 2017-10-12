@@ -22,20 +22,6 @@ import static org.apache.geode.distributed.ConfigurationProperties.STATISTIC_ARC
 import static org.apache.geode.management.internal.cli.commands.ExportLogsCommand.ONLY_DATE_FORMAT;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.google.common.collect.Sets;
-
-import org.apache.geode.distributed.ConfigurationProperties;
-import org.apache.geode.internal.AvailablePortHelper;
-import org.apache.geode.management.internal.cli.util.CommandStringBuilder;
-import org.apache.geode.test.dunit.rules.GfshShellConnectionRule;
-import org.apache.geode.test.dunit.rules.LocatorServerStartupRule;
-import org.apache.geode.test.dunit.rules.MemberVM;
-import org.apache.geode.test.junit.categories.DistributedTest;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -48,10 +34,27 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import com.google.common.collect.Sets;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+
+import org.apache.geode.distributed.ConfigurationProperties;
+import org.apache.geode.internal.AvailablePortHelper;
+import org.apache.geode.management.cli.Result;
+import org.apache.geode.management.internal.cli.result.CommandResult;
+import org.apache.geode.management.internal.cli.util.CommandStringBuilder;
+import org.apache.geode.test.junit.rules.GfshShellConnectionRule;
+import org.apache.geode.test.dunit.rules.LocatorServerStartupRule;
+import org.apache.geode.test.dunit.rules.MemberVM;
+import org.apache.geode.test.junit.categories.DistributedTest;
+
 @Category(DistributedTest.class)
 public class ExportLogsStatsDUnitTest {
   @ClassRule
-  public static LocatorServerStartupRule lsRule = new LocatorServerStartupRule();
+  public static LocatorServerStartupRule lsRule =
+      new LocatorServerStartupRule().withTempWorkingDir().withLogFile();
 
   @ClassRule
   public static GfshShellConnectionRule connector = new GfshShellConnectionRule();
@@ -136,6 +139,13 @@ public class ExportLogsStatsDUnitTest {
 
     String output = connector.execute(commandStringBuilder.toString());
     assertThat(output).contains("No files to be exported");
+  }
+
+  @Test
+  public void testExportedZipFileTooBig() throws Exception {
+    connectIfNeeded();
+    CommandResult result = connector.executeCommand("export logs --file-size-limit=10k");
+    assertThat(result.getStatus()).isEqualTo(Result.Status.ERROR);
   }
 
   protected String getZipPathFromCommandResult(String message) {
