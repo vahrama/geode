@@ -800,7 +800,7 @@ public class TCPConduit implements Runnable {
 
   protected void basicAcceptConnection(Socket othersock) {
     try {
-      getConTable().acceptConnection(othersock);
+      getConTable().acceptConnection(othersock, new PeerConnectionFactory());
     } catch (IOException io) {
       // exception is logged by the Connection
       if (!stopped) {

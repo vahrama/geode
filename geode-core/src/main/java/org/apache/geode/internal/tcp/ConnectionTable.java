@@ -268,14 +268,14 @@ public class ConnectionTable {
   // }
 
   /** conduit calls acceptConnection after an accept */
-  protected void acceptConnection(Socket sock) throws IOException, ConnectionException {
-    Connection connection = null;
+  protected void acceptConnection(Socket sock, PeerConnectionFactory peerConnectionFactory)
+      throws IOException, ConnectionException, InterruptedException {
     InetAddress connAddress = sock.getInetAddress(); // for bug 44736
     boolean finishedConnecting = false;
-    Connection conn = null;
+    Connection connection = null;
     // boolean exceptionLogged = false;
     try {
-      conn = Connection.createReceiver(this, sock);
+      connection = peerConnectionFactory.createReceiver(this, sock);
 
       // check for shutdown (so it doesn't get missed in the finally block)
       this.owner.getCancelCriterion().checkCancelInProgress(null);
@@ -299,27 +299,32 @@ public class ConnectionTable {
       // in our caller.
       // no need to log error here since caller will log warning
 
-      if (conn != null && !finishedConnecting) {
+      if (connection != null && !finishedConnecting) {
         // we must be throwing from checkCancelInProgress so close the connection
-        closeCon(LocalizedStrings.ConnectionTable_CANCEL_AFTER_ACCEPT.toLocalizedString(), conn);
-        conn = null;
+        closeCon(LocalizedStrings.ConnectionTable_CANCEL_AFTER_ACCEPT.toLocalizedString(),
+            connection);
+        connection = null;
       }
     }
 
     // Stub id = conn.getRemoteId();
-    if (conn != null) {
+    if (connection != null) {
       synchronized (this.receivers) {
         this.owner.stats.incReceivers();
         if (this.closed) {
           closeCon(LocalizedStrings.ConnectionTable_CONNECTION_TABLE_NO_LONGER_IN_USE
-              .toLocalizedString(), conn);
+              .toLocalizedString(), connection);
           return;
         }
-        this.receivers.add(conn);
+        // If connection.stopped is false, any connection cleanup thread will not yet have acquired
+        // the receiver synchronization to remove the receiver. Therefore we can safely add it here.
+        if (!(connection.isSocketClosed() || connection.isReceiverStopped())) {
+          this.receivers.add(connection);
+        }
       }
       if (logger.isDebugEnabled()) {
-        logger.debug("Accepted {} myAddr={} theirAddr={}", conn, getConduit().getLocalAddress(),
-            conn.remoteAddr);
+        logger.debug("Accepted {} myAddr={} theirAddr={}", connection,
+            getConduit().getLocalAddress(), connection.remoteAddr);
       }
     }
     // cleanupHighWater();
@@ -1343,6 +1348,10 @@ public class ConnectionTable {
 
     @Override
     public boolean cancel() {
+      Connection con = this.c;
+      if (con != null) {
+        con.cleanUpOnIdleTaskCancel();
+      }
       this.c = null;
       return super.cancel();
     }
@@ -1389,5 +1398,8 @@ public class ConnectionTable {
     }
   }
 
+  public int getNumberOfReceivers() {
+    return receivers.size();
+  }
 
 }

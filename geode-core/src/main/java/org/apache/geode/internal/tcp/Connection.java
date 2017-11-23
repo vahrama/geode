@@ -573,6 +573,12 @@ public class Connection implements Runnable {
     }
   }
 
+  protected void initReceiver() {
+    this.startReader(owner);
+    this.waitForHandshake();
+    this.finishedConnecting = true;
+  }
+
   void setIdleTimeoutTask(SystemTimerTask task) {
     this.idleTask = task;
   }
@@ -1359,6 +1365,14 @@ public class Connection implements Runnable {
     }
     this.batchFlusher = new BatchBufferFlusher();
     this.batchFlusher.start();
+  }
+
+  public void cleanUpOnIdleTaskCancel() {
+    // Make sure receivers are removed from the connection table, this should always be a noop, but
+    // is done here as a failsafe.
+    if (isReceiver) {
+      owner.removeReceiver(this);
+    }
   }
 
   private class BatchBufferFlusher extends Thread {
@@ -4052,6 +4066,11 @@ public class Connection implements Runnable {
   public boolean isSocketClosed() {
     return this.socket.isClosed() || !this.socket.isConnected();
   }
+
+  public boolean isReceiverStopped() {
+    return this.stopped;
+  }
+
 
   private boolean isSocketInUse() {
     return this.socketInUse;
