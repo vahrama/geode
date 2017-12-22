@@ -121,6 +121,23 @@ public class SocketCreator {
   private static final Logger logger = LogService.getLogger();
 
   /**
+   * The name of a system property that sets the hand shake timeout (in milliseconds). This is how
+   * long a client will wait to hear back from a server.
+   */
+  private static final String SSL_HANDSHAKE_CUSTOM_TIMEOUT_PROPERTY_NAME =
+      "SSL.handShakeCustomTimeout";
+
+  /**
+   * The default value of the {@link #SSL_HANDSHAKE_CUSTOM_TIMEOUT_PROPERTY_NAME} system property.
+   */
+  private static final int DEFAULT_SSL_HANDSHAKE_CUSTOM_TIMEOUT_MS = 3000;
+
+  /** Test value for handshake timeout */
+  private static final int sslHandShakeCustomTimeout =
+      Integer.getInteger(SSL_HANDSHAKE_CUSTOM_TIMEOUT_PROPERTY_NAME,
+          DEFAULT_SSL_HANDSHAKE_CUSTOM_TIMEOUT_MS).intValue();
+
+  /**
    * Optional system property to enable GemFire usage of link-local addresses
    */
   public static final String USE_LINK_LOCAL_ADDRESSES_PROPERTY =
@@ -1007,7 +1024,17 @@ public class SocketCreator {
   public void configureServerSSLSocket(Socket socket) throws IOException {
     if (socket instanceof SSLSocket) {
       SSLSocket sslSocket = (SSLSocket) socket;
+
+      int originalTimeout = sslSocket.getSoTimeout();
+
       try {
+        /**
+         * vahrama - Added mandatory setting of socket timeout before starting SSL handshake.
+         * Setting of SSL.handShakeCustomTimeout to 0 value in system properties disables this logic
+         */
+        if (sslHandShakeCustomTimeout > 0) {
+          sslSocket.setSoTimeout(sslHandShakeCustomTimeout);
+        }
         sslSocket.startHandshake();
         SSLSession session = sslSocket.getSession();
         Certificate[] peer = session.getPeerCertificates();
@@ -1033,6 +1060,10 @@ public class SocketCreator {
                     new Object[] {socket.getInetAddress(), Integer.valueOf(socket.getPort())}),
                 ex);
         throw ex;
+      } finally {
+        if (sslHandShakeCustomTimeout > 0) {
+          sslSocket.setSoTimeout(originalTimeout);
+        }
       }
     }
   }
@@ -1086,9 +1117,19 @@ public class SocketCreator {
         sslSocket.setEnabledCipherSuites(ciphers);
       }
 
+      int originalTimeout = sslSocket.getSoTimeout();
+
       try {
         if (timeout > 0) {
           sslSocket.setSoTimeout(timeout);
+          originalTimeout = timeout;
+        }
+        /**
+         * vahrama - Added mandatory setting of socket timeout before starting SSL handshake.
+         * Setting of SSL.handShakeCustomTimeout to 0 value in system properties disables this logic
+         */
+        if (sslHandShakeCustomTimeout > 0) {
+          sslSocket.setSoTimeout(sslHandShakeCustomTimeout);
         }
         sslSocket.startHandshake();
         SSLSession session = sslSocket.getSession();
@@ -1120,6 +1161,10 @@ public class SocketCreator {
                     new Object[] {socket.getInetAddress(), Integer.valueOf(socket.getPort())}),
                 ex);
         throw ex;
+      } finally {
+        if (sslHandShakeCustomTimeout > 0) {
+          sslSocket.setSoTimeout(originalTimeout);
+        }
       }
 
     }
