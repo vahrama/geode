@@ -71,6 +71,8 @@ public class ClassPathLoader {
 
   private static volatile ClassPathLoader latest;
 
+  private final List<ClassLoader> userDefinedClassLoaders;
+
   private volatile URLClassLoader classLoaderForDeployedJars;
 
   private final JarDeployer jarDeployer;
@@ -86,12 +88,14 @@ public class ClassPathLoader {
   public ClassPathLoader(boolean excludeTCCL) {
     this.excludeTCCL = excludeTCCL;
     this.jarDeployer = new JarDeployer();
+    this.userDefinedClassLoaders = new ArrayList<ClassLoader>();
     rebuildClassLoaderForDeployedJars();
   }
 
   public ClassPathLoader(boolean excludeTCCL, File workingDir) {
     this.excludeTCCL = excludeTCCL;
     this.jarDeployer = new JarDeployer(workingDir);
+    this.userDefinedClassLoaders = new ArrayList<ClassLoader>();
     rebuildClassLoaderForDeployedJars();
   }
 
@@ -299,6 +303,12 @@ public class ClassPathLoader {
   private List<ClassLoader> getClassLoaders() {
     ArrayList<ClassLoader> classLoaders = new ArrayList<>();
 
+    if (userDefinedClassLoaders != null && !userDefinedClassLoaders.isEmpty()) {
+      for (ClassLoader e : userDefinedClassLoaders) {
+        classLoaders.add(e);
+      }
+    }
+
     if (!excludeTCCL) {
       ClassLoader tccl = Thread.currentThread().getContextClassLoader();
       if (tccl != null) {
@@ -367,6 +377,10 @@ public class ClassPathLoader {
    */
   public static ClassLoader getLatestAsClassLoader() {
     return getLatest().asClassLoader();
+  }
+
+  public void setUserDefinedClassLoader(final ClassLoader classLoader) {
+    userDefinedClassLoaders.add(classLoader);
   }
 
 }
